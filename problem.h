@@ -9,6 +9,10 @@
 using namespace std;
 
 // 数据结构区
+enum MaxOrMin {
+    Max,
+    Min,
+};
 enum Range {
     UNLIMITED,
     LARGE_EQUAL,
@@ -16,35 +20,34 @@ enum Range {
     EQUAL,
 };
 
-enum MaxOrMin {
-    Max,
-    Min,
-};
-
-struct vVar {
-    double value = 0;
-    string name;
-    Range range;
-    double rhs = 0;
-};
-
-typedef vector<pair<double, string>> vX;
-typedef vector<vector<double>> vP;
+typedef pair<Range, double> tRightSide;
+typedef vector<tRightSide> vRange;
 typedef vector<double> vValue;
-typedef vector<pair<Range, double>> vRange;
+typedef vector<vector<double>> vP;
+
+struct tVar {
+    string name;
+    tRightSide rhs;
+    tVar(string name, tRightSide rhs) {
+        this->name = name;
+        this->rhs = rhs;
+    }
+};
+
+typedef vector<tVar> vX;
 
 class Problem {
    public:
     MaxOrMin maxOrmin;  // 优化目标
-    vX X;               // 决策变量
-    vRange Xrange;      // 变量限制范围，可以考虑与X合并
+    vX X;               // 决策变量信息
+    // vRange Xrange;      // 变量限制范围，可以考虑与X合并
     vP P;               // 工艺系数 P[i_n][i_m]
     vValue C;           // 目标函数系数
     vRange B;           // 约束条件右边项 //B>=0
     double offset = 0;  // 目标函数修正值
     Problem() {}
     Problem(const Problem& other)
-        : X(other.X), Xrange(other.Xrange), P(other.P), C(other.C), B(other.B) {
+        : X(other.X), P(other.P), C(other.C), B(other.B) {
         this->maxOrmin = other.maxOrmin;
         this->offset = other.offset;
     }
@@ -62,7 +65,6 @@ class Problem {
 inline bool equals(double d1, double d2) {
     return (d1 - d2 < DBL_EPSILON) && (d2 - d1 < DBL_EPSILON);
 }
-
 
 Problem* InputPblm() {
     Problem* pblm = new Problem();
@@ -90,20 +92,21 @@ Problem* InputPblm() {
         sregex_iterator range_pos(result.cbegin(), result.cend(), var_range);
         for (sregex_iterator end; name_pos != end && range_pos != end; ++name_pos, ++range_pos) {
             string name = name_pos->str();
-            pblm->X.push_back(make_pair(0, name));
             string str = range_pos->str();
-            pair<Range, double> pr;
+            tRightSide rhs;
             if (str == "\\")
-                pr = make_pair(UNLIMITED, 0);
+                rhs = make_pair(UNLIMITED, 0);
             else if (str == "+")
-                pr = make_pair(LARGE_EQUAL, 0);
+                rhs = make_pair(LARGE_EQUAL, 0);
             else if (str == "-")
-                pr = make_pair(SMALL_EQUAL, 0);
+                rhs = make_pair(SMALL_EQUAL, 0);
             else if (str.substr(0, 2) == ">=")
-                pr = make_pair(LARGE_EQUAL, stod(str.substr(2)));
+                rhs = make_pair(LARGE_EQUAL, stod(str.substr(2)));
             else if (str.substr(0, 2) == "<=")
-                pr = make_pair(SMALL_EQUAL, stod(str.substr(2)));
-            pblm->Xrange.push_back(pr);
+                rhs = make_pair(SMALL_EQUAL, stod(str.substr(2)));
+
+            tVar var(name, rhs);
+            pblm->X.push_back(var);
         }
     }
 
@@ -163,7 +166,7 @@ Problem* InputPblm() {
             string name = name_pos->str();
             vX::iterator it;
             for (it = pblm->X.begin(); it != pblm->X.end(); it++)
-                if ((*it).second == name)
+                if ((*it).name == name)
                     break;
             if (it == pblm->X.end())
                 cout << "var not found,error!" << endl;
@@ -207,17 +210,16 @@ Problem* InputPblm() {
             smatch constraint_matched;
             regex_search(line, constraint_matched, constraint);
             string str = constraint_matched.str();
-            pair<Range, double> pr;
+            tRightSide rhs;
             if (str[0] == '=')
-                pr = make_pair(EQUAL, stod(str.substr(1)));
+                rhs = make_pair(EQUAL, stod(str.substr(1)));
             else if (str.substr(0, 2) == ">=")
-                pr = make_pair(LARGE_EQUAL, stod(str.substr(2)));
+                rhs = make_pair(LARGE_EQUAL, stod(str.substr(2)));
             else if (str.substr(0, 2) == "<=")
-                pr = make_pair(SMALL_EQUAL, stod(str.substr(2)));
+                rhs = make_pair(SMALL_EQUAL, stod(str.substr(2)));
             else
                 cout << "constraint Error! constraint is " << str << endl;
-            pblm->B.at(line_num) = pr;
-            // cout << "Range is " << pr.first << endl;
+            pblm->B.at(line_num) = rhs;
 
             // 识别约束条件左边项
             sregex_iterator name_pos(line.cbegin(), line.cend(), var_name);
@@ -243,13 +245,13 @@ Problem* InputPblm() {
 
                 // 找到对应的变量并修改P[i][j]，即确定i
                 string name = name_pos->str();
-                vX::iterator it;
-                for (it = pblm->X.begin(); it != pblm->X.end(); it++)
-                    if ((*it).second == name)
+                vX::iterator itx;
+                for (itx = pblm->X.begin(); itx != pblm->X.end(); itx++)
+                    if ((*itx).name == name)
                         break;
-                if (it == pblm->X.end())
+                if (itx == pblm->X.end())
                     cout << "var not found,error!" << endl;
-                int index = distance(pblm->X.begin(), it);
+                int index = distance(pblm->X.begin(), itx);
                 // cout << "index is " << index << ", line_num is " << line_num << endl;
                 pblm->P.at(index).at(line_num) = p;
             }
@@ -266,22 +268,20 @@ void Problem::OutputPblm() {
 }
 
 void Problem::OutputVar() {
-    vX::const_iterator itx = X.cbegin();
-    vRange::const_iterator itxr = Xrange.cbegin();
-    for (; itx != X.cend() && itxr != Xrange.cend(); ++itx, ++itxr) {
-        cout << (*itx).second;
-        switch ((*itxr).first) {
+    for (vX::const_iterator itx = X.cbegin(); itx != X.cend(); ++itx) {
+        cout << (*itx).name;
+        switch ((*itx).rhs.first) {
             case UNLIMITED:
                 cout << " is unlimited" << endl;
                 break;
             case LARGE_EQUAL:
-                cout << ">=" << (*itxr).second << endl;
+                cout << ">=" << (*itx).rhs.second << endl;
                 break;
             case SMALL_EQUAL:
-                cout << "<=" << (*itxr).second << endl;
+                cout << "<=" << (*itx).rhs.second << endl;
                 break;
             case EQUAL:
-                cout << "=" << (*itxr).second << endl;
+                cout << "=" << (*itx).rhs.second << endl;
                 break;
             default:
                 cout << "output Error!" << endl;
@@ -305,7 +305,7 @@ void Problem::OutputTarget() {
             cout << " ";
         if (*itc > 0 && itc != C.cbegin())
             cout << "+";
-        cout << *itc << "*" << (*itx).second;
+        cout << *itc << "*" << (*itx).name;
     }
     if (offset) {
         cout << " ";
@@ -317,8 +317,7 @@ void Problem::OutputTarget() {
 }
 
 void Problem::OutputConstraint() {
-    vRange::const_iterator itb = B.cbegin();
-    for (; itb != B.cend() && 1; ++itb, 1) {  // 按约束遍历
+    for (vRange::const_iterator itb = B.cbegin(); itb != B.cend(); ++itb) {  // 按约束遍历
         int index = distance(B.cbegin(), itb);
         int Psz = P.size();
         for (int i = 0; i < Psz; ++i) {
@@ -328,7 +327,7 @@ void Problem::OutputConstraint() {
                 cout << " ";
             if (P.at(i).at(index) > 0 && i)
                 cout << "+";
-            cout << P.at(i).at(index) << "*" << X.at(i).second;
+            cout << P.at(i).at(index) << "*" << X.at(i).name;
         }
         switch ((*itb).first) {
             case UNLIMITED:
@@ -367,59 +366,61 @@ Problem* Problem::Dualize() {
     // 约束条件不等号决定变量取值范围(Max相反，Min相同)
     vRange::const_iterator itb = B.cbegin();
     for (int index = 0; itb != B.cend(); ++itb, ++index) {
-        dual->X.push_back(make_pair(0.0, "line" + to_string(index)));
-        Range r;
+        Range range;
         if ((*itb).first == EQUAL)
-            r = UNLIMITED;
+            range = UNLIMITED;
         else if ((*itb).first == SMALL_EQUAL) {
             if (maxOrmin == Max)
-                r = LARGE_EQUAL;
+                range = LARGE_EQUAL;
             else if (maxOrmin == Min)
-                r = SMALL_EQUAL;
+                range = SMALL_EQUAL;
         } else if ((*itb).first == LARGE_EQUAL) {
             if (maxOrmin == Max)
-                r = SMALL_EQUAL;
+                range = SMALL_EQUAL;
             else if (maxOrmin == Min)
-                r = LARGE_EQUAL;
+                range = LARGE_EQUAL;
         } else
             cout << "Range Error!" << endl;
-        dual->Xrange.push_back(make_pair(r, 0.0));
+        tRightSide rhs(range, 0);
+        tVar var("line" + to_string(index), rhs);
+        dual->X.push_back(var);
         dual->C.push_back((*itb).second);
     }
 
     // 目标函数系数决定约束条件右边项数值
     // 变量取值范围决定约束条件不等号(Max相同，Min相反)
     vValue::const_iterator itc = C.cbegin();
-    vRange::const_iterator itxr = Xrange.cbegin();
-    for (; itc != C.cend() && itxr != Xrange.cend(); ++itc, ++itxr) {
-        Range r;
-        if ((*itxr).first == UNLIMITED)
-            r = EQUAL;
-        else if ((*itxr).first == SMALL_EQUAL) {
+    vX::const_iterator itx = X.cbegin();
+    for (; itc != C.cend() && itx != X.cend(); ++itc, ++itx) {
+        Range range;
+        if ((*itx).rhs.first == UNLIMITED)
+            range = EQUAL;
+        else if ((*itx).rhs.first == SMALL_EQUAL) {
             if (maxOrmin == Max)
-                r = SMALL_EQUAL;
+                range = SMALL_EQUAL;
             else if (maxOrmin == Min)
-                r = LARGE_EQUAL;
-        } else if ((*itxr).first == LARGE_EQUAL) {
+                range = LARGE_EQUAL;
+        } else if ((*itx).rhs.first == LARGE_EQUAL) {
             if (maxOrmin == Max)
-                r = LARGE_EQUAL;
+                range = LARGE_EQUAL;
             else if (maxOrmin == Min)
-                r = SMALL_EQUAL;
+                range = SMALL_EQUAL;
         } else
             cout << "Range Error!" << endl;
-        dual->B.push_back(make_pair(r, *itc));
+        tRightSide rhs(range, *itc);
+        dual->B.push_back(rhs);
     }
 
     // 变量取值范围决定约束条件右边项数值
     dual->offset = offset;
-    for (vRange::const_iterator itxr = Xrange.cbegin(); itxr != Xrange.cend(); ++itxr) {
-        if (equals(0.0, (*itxr).second))
+    for (vX::const_iterator itx = X.cbegin(); itx != X.cend(); ++itx) {
+        if (equals(0.0, (*itx).rhs.second))
             continue;
-        int index = distance(Xrange.cbegin(), itxr);
+        int index = distance(X.cbegin(), itx);
         vValue::iterator itc_ = dual->C.begin();
         for (int i = 0; itc_ != dual->C.end(); ++itc_, ++i)
-            (*itc_) -= (*itxr).second * P.at(index).at(i);
-        dual->offset += (*itxr).second * C.at(index);  // 对偶问题需要取反
+            (*itc_) -= (*itx).rhs.second * P.at(index).at(i);
+        dual->offset += (*itx).rhs.second * C.at(index);  // 对偶问题需要取反
     }
 
     // 目标函数变化
@@ -443,10 +444,8 @@ Problem* Problem::Standandlize() {
     }
 
     // 修正变量取值范围
-    vX::iterator itx = pblm->X.begin();
-    vRange::iterator itxr = pblm->Xrange.begin();
-    for (; itx != pblm->X.end() && itxr != pblm->Xrange.end(); ++itx, ++itxr) {
-        double bound = (*itxr).second;
+    for (vX::iterator itx = pblm->X.begin(); itx != pblm->X.end(); ++itx) {
+        double bound = (*itx).rhs.second;
         string bound_str = to_string(bound);
         if (equals(bound, floor(bound)))  // bound = 3.0001
             bound_str = to_string(int(bound));
@@ -454,26 +453,25 @@ Problem* Problem::Standandlize() {
             bound_str = to_string(int(bound) + 1);
         regex_replace(bound_str, std::regex("\\."), "dot");
         int index = distance(pblm->X.begin(), itx);
-        if ((*itxr).first == EQUAL)
+        if ((*itx).rhs.first == EQUAL)
             continue;
 
         // x>=a,x'=x-a,x=x'+a
-        else if ((*itxr).first == LARGE_EQUAL) {
+        else if ((*itx).rhs.first == LARGE_EQUAL) {
             if (equals(bound, 0))
                 continue;
-            (*itx).second = "__" + (*itx).second + "_minus_" + bound_str + "__";  // x'=x-a,x=x'+a
+            (*itx).name = "__" + (*itx).name + "_minus_" + bound_str + "__";  // x'=x-a,x=x'+a
             pblm->offset += bound * pblm->C.at(index);
             vValue::iterator itp_in = pblm->P.at(index).begin();
             vRange::iterator itb = pblm->B.begin();
             for (; itp_in != pblm->P.at(index).end() && itb != pblm->B.end(); ++itp_in, ++itb)
                 (*itb).second -= bound * (*itp_in);
-            (*itxr).first = LARGE_EQUAL;
-            (*itxr).second = 0;
+            (*itx).rhs = make_pair(LARGE_EQUAL, 0);
         }
 
         // x<=a,x'=-x+a,x=-x'+a
-        else if ((*itxr).first == SMALL_EQUAL) {
-            (*itx).second = "__minus_" + (*itx).second + "_plus_" + bound_str + "__";  // x'=-x+a,x=-x'+a
+        else if ((*itx).rhs.first == SMALL_EQUAL) {
+            (*itx).name = "__minus_" + (*itx).name + "_plus_" + bound_str + "__";  // x'=-x+a,x=-x'+a
             pblm->offset += bound * pblm->C.at(index);
             pblm->C.at(index) = -pblm->C.at(index);  // Ci取负
             vValue::iterator itp_in = pblm->P.at(index).begin();
@@ -482,25 +480,24 @@ Problem* Problem::Standandlize() {
                 (*itb).second -= bound * (*itp_in);
                 (*itp_in) = -(*itp_in);  // Pi全部取负
             }
-            (*itxr).first = LARGE_EQUAL;
-            (*itxr).second = 0;
+            (*itx).rhs = make_pair(LARGE_EQUAL, 0);
         }
 
         // x unlimited,x = x_1-x_2
-        else if ((*itxr).first == UNLIMITED) {
-            string name = (*itx).second;
-            (*itxr).first = LARGE_EQUAL;
-            (*itxr).second = 0;
-            (*itx).second = "__" + name + "_part1__";
-            itx = pblm->X.emplace(itx + 1, make_pair(0.0, "__" + name + "_part2__"));
-            itxr = pblm->Xrange.emplace(itxr + 1, make_pair(LARGE_EQUAL, 0.0));
+        else if ((*itx).rhs.first == UNLIMITED) {
+            string name = (*itx).name;
+            (*itx).rhs = make_pair(LARGE_EQUAL, 0);
+            (*itx).name = "__" + name + "_part1__";
+            tRightSide rhs(LARGE_EQUAL, 0);
+            tVar var("__" + name + "_part2__", rhs);
+            itx = pblm->X.emplace(itx + 1, var);                               // 迭代器可能失效，需要重新获取
             pblm->C.emplace(pblm->C.begin() + index + 1, -pblm->C.at(index));  // Ci' = -Ci
             pblm->P.emplace(pblm->P.begin() + index + 1, pblm->P.at(index));   // Pi' = Pi
             vValue::iterator itp_in = pblm->P.at(index + 1).begin();
             for (; itp_in != pblm->P.at(index + 1).end(); ++itp_in)
                 (*itp_in) = -(*itp_in);  // Pi' = -Pi' = -Pi
         } else
-            cout << "Error" << (*itxr).first << endl;
+            cout << "Error" << (*itx).rhs.first << endl;
     }
 
     // 保证约束条件均为等于某非负值
@@ -521,8 +518,9 @@ Problem* Problem::Standandlize() {
 
         // 引入剩余变量remain variable
         if ((*itb).first == LARGE_EQUAL) {
-            pblm->X.push_back(make_pair(0, "__remain_" + to_string(index) + "__"));
-            pblm->Xrange.push_back(make_pair(LARGE_EQUAL, 0.0));
+            tRightSide rhs(LARGE_EQUAL, 0);
+            tVar var("__remain_" + to_string(index) + "__", rhs);
+            pblm->X.push_back(var);
             pblm->C.push_back(0.0);
             pblm->P.push_back(vector(pblm->B.size(), 0.0));
             pblm->P.back().at(index) = -1;
@@ -530,8 +528,9 @@ Problem* Problem::Standandlize() {
         }
         // 引入松弛变量flabby variable
         else if ((*itb).first == SMALL_EQUAL) {
-            pblm->X.push_back(make_pair(0, "__flabby_" + to_string(index) + "__"));
-            pblm->Xrange.push_back(make_pair(LARGE_EQUAL, 0.0));
+            tRightSide rhs(LARGE_EQUAL, 0);
+            tVar var("__flabby_" + to_string(index) + "__", rhs);
+            pblm->X.push_back(var);
             pblm->C.push_back(0.0);
             pblm->P.push_back(vector(pblm->B.size(), 0.0));
             pblm->P.back().at(index) = 1;
@@ -550,8 +549,8 @@ bool Problem::IsStandard() {
         return 0;
 
     // 所有变量取值都为非负
-    for (vRange::const_iterator itxr = Xrange.cbegin(); itxr != Xrange.cend(); ++itxr)
-        if ((*itxr).first == LARGE_EQUAL || !equals((*itxr).second, 0))
+    for (vX::const_iterator itx = X.cbegin(); itx != X.cend(); ++itx)
+        if ((*itx).rhs.first == LARGE_EQUAL || !equals((*itx).rhs.second, 0))
             return 0;
 
     // 所有约束都为等于某非负值

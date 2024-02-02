@@ -74,8 +74,9 @@ Base* Initialize(Problem* pblm) {
         if (base->baseVarOfConstraint[i_m] != -1)  // 该约束已找到对应的基变量
             continue;
         baseLack++;
-        auxiliaryPblm->X.push_back(make_pair(0, "__auxiliary_" + to_string(i_m) + "__"));
-        auxiliaryPblm->Xrange.push_back(make_pair(LARGE_EQUAL, 0));
+        tRightSide rhs(LARGE_EQUAL, 0);
+        tVar var("__auxiliary_" + to_string(i_m) + "__", rhs);
+        auxiliaryPblm->X.push_back(var);
         auxiliaryPblm->C.push_back(-1);
         auxiliaryPblm->P.push_back(vector(auxiliaryPblm->B.size(), 0.0));
         auxiliaryPblm->P.back().at(i_m) = 1;
@@ -115,13 +116,13 @@ int Simplex(Problem* pblm, Base* base) {
             pblm->offset += pblm->C.at(i_n) * pblm->B.at(base->constraintOfBaseVar[i_n]).second;
     for (int i_n = 0; i_n < n; i_n++) {
         if (base->constraintOfBaseVar[i_n] < m) {
-            cout << pblm->X.at(i_n).second << " is basic var" << endl;
+            cout << pblm->X.at(i_n).name << " is basic var" << endl;
             continue;
         }
         // lamda[i_n] = pblm->C.at(i_n);
         for (int i_m = 0; i_m < m; i_m++)  // baseVarOfConstraint[i_m]是第i_m号方程对应的基变量
             pblm->C.at(i_n) -= pblm->C.at(base->baseVarOfConstraint[i_m]) * pblm->P.at(i_n).at(i_m);
-        cout << "Lamda[" << pblm->X.at(i_n).second << "] = " << pblm->C.at(i_n) << endl;
+        cout << "Lamda[" << pblm->X.at(i_n).name << "] = " << pblm->C.at(i_n) << endl;
         if (pblm->C.at(i_n) >= maxLamda) {
             enterBaseVar = i_n;  // 总是选择序号大的变量入基
             maxLamda = pblm->C.at(i_n);
@@ -139,7 +140,7 @@ int Simplex(Problem* pblm, Base* base) {
     }
     for (int i_m = 0; i_m < m; i_m++)
         pblm->C.at(base->baseVarOfConstraint[i_m]) = 0;  //  基变量系数置为0
-    if (enterBaseVar == -1) {  // 所有检验数均为负
+    if (enterBaseVar == -1) {                            // 所有检验数均为负
         cout << "所有检验数均为负，到达最优解" << endl;
         return 1;
     }
@@ -159,7 +160,7 @@ int Simplex(Problem* pblm, Base* base) {
     base->leaveBaseVar = leaveBaseVar;
     cout << "当前目标函数为";
     pblm->OutputTarget();
-    cout << "出基变量为" << pblm->X.at(leaveBaseVar).second << "; 入基变量为" << pblm->X.at(enterBaseVar).second << endl;
+    cout << "出基变量为" << pblm->X.at(leaveBaseVar).name << "; 入基变量为" << pblm->X.at(enterBaseVar).name << endl;
     return 0;  // 继续进行
 }
 
@@ -206,7 +207,7 @@ Problem* SimplexMethod(Problem* pblm0) {
         cout << "result is " << pblm->offset << " ";
         cout << ", got at (";
         for (int i_n = 0; i_n < n; i_n++) {
-            cout << pblm->X.at(i_n).second << "=";
+            cout << pblm->X.at(i_n).name << "=";
             if (base->constraintOfBaseVar[i_n] >= 0 && base->constraintOfBaseVar[i_n] < m)
                 cout << pblm->B.at(base->constraintOfBaseVar[i_n]).second;
             else
