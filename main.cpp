@@ -1,6 +1,6 @@
 #include <math.h>
 #include <iostream>
-#include "inputdata.h"
+#include "./problem.h"
 #include "simplex.h"
 
 using namespace std;

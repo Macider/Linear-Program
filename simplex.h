@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 
-#include "inputdata.h"
+#include "./problem.h"
 using namespace std;
 
 // 数据结构区
