@@ -1,7 +1,11 @@
+/*
+ * 定义基础数据结构
+ */
 #pragma once
 #include <float.h>
 #include <algorithm>
 #include <cassert>
+#include <cmath>
 #include <iostream>
 #include <regex>
 #include <string>
@@ -13,6 +17,14 @@ enum MaxOrMin {
     Max,
     Min,
 };
+enum ResultType {
+    NO_SOLUTION = -1,
+    UNKNOWN = 0,
+    ONE_SOLUTION,
+    MAYBE_MANY,
+    MANY_SOLUTION,
+    UNBOUNDED,
+};
 enum Range {
     UNLIMITED,
     LARGE_EQUAL,
@@ -21,16 +33,19 @@ enum Range {
 };
 
 typedef pair<Range, double> tRightSide;
-typedef vector<tRightSide> vRange;
+typedef vector<tRightSide> vB;
 typedef vector<double> vValue;
-typedef vector<vector<double>> vP;
+typedef vector<vValue> vP;
+typedef pair<double, vValue> tResult;
 
 struct tVar {
     string name;
     tRightSide rhs;
-    tVar(string name, tRightSide rhs) {
+    double value;
+    tVar(string name, tRightSide rhs, double value) {
         this->name = name;
         this->rhs = rhs;
+        this->value = value;
     }
 };
 
@@ -38,32 +53,67 @@ typedef vector<tVar> vX;
 
 class Problem {
    public:
-    MaxOrMin maxOrmin;  // 优化目标
+    MaxOrMin maxOrMin;  // 优化目标
     vX X;               // 决策变量信息
-    // vRange Xrange;      // 变量限制范围，可以考虑与X合并
     vP P;               // 工艺系数 P[i_n][i_m]
     vValue C;           // 目标函数系数
-    vRange B;           // 约束条件右边项 //B>=0
+    vB B;               // 约束条件右边项 //B>=0
     double offset = 0;  // 目标函数修正值
+    ResultType result = UNKNOWN;
     Problem() {}
     Problem(const Problem& other)
         : X(other.X), P(other.P), C(other.C), B(other.B) {
-        this->maxOrmin = other.maxOrmin;
+        this->maxOrMin = other.maxOrMin;
         this->offset = other.offset;
     }
     Problem* Dualize();
-    Problem* Standandlize();
+    Problem* Standardlize();
     bool IsStandard();
-    void OutputPblm();
 
+    bool TestConstraint();
+    void SimplifyDouble();
+
+    tResult* GetResult();
+    void OutputResult();
+
+    void OutputPblm();
     void OutputVar();
     void OutputTarget();
     void OutputConstraint();
+
+    Range RangeB();
+    Range RangeC();
+    void ChangeB(Range range);  // 用于对偶单纯形法
 };
 
 // 函数区
 inline bool equals(double d1, double d2) {
-    return (d1 - d2 < DBL_EPSILON) && (d2 - d1 < DBL_EPSILON);
+    return (d1 - d2 < 1e-6) && (d2 - d1 < 1e-6);
+}
+inline bool IsInt(double d) {
+    // d always in [floor(d), floor(d) + 1];
+    // cout << "d is " << d << ", floor d is " << floor(d) << endl;
+    // cout << "equals(d, floor(d))的结果为" << equals(d, floor(d)) << endl;
+    // cout << "equals(d, 1 + floor(d))的结果为" << equals(d, 1 + floor(d)) << endl;
+    return equals(d, floor(d)) || equals(d, 1 + floor(d));
+}
+inline int SimplifyToInt(double d) {
+    assert(IsInt(d));
+    if (equals(d, floor(d)))
+        return int(floor(d));
+    else if (equals(d, 1 + floor(d)))
+        return int(1 + floor(d));
+    else
+        cout << "SimplifyToInt Error" << endl;
+    return 0;
+}
+inline bool IsIntResult(tResult* rst) {
+    for (vValue::const_iterator itv = rst->second.cbegin(); itv != rst->second.cend(); ++itv)
+        if (!IsInt(*itv)) {
+            // cout << (*itv) << "is not int!!!" << endl;
+            return false;
+        }
+    return true;
 }
 
 Problem* InputPblm() {
@@ -71,9 +121,11 @@ Problem* InputPblm() {
     string namePattern = "[a-zA-Z_](\\w)*";  // C++变量格式
     string rangePattern = "(\\+)|(-)|(\\?)|((>|<)=(\\s)*((\\+)|(-))?(\\d)+)";
     string constraintPattern = "((>|<)?=(\\s)*((\\+)|(-))?(\\d)+)";
-    regex var_name(namePattern);          // 变量名
-    regex var_range(rangePattern);        // 变量范围     // 暂时只支持整数
-    regex constraint(constraintPattern);  // 约束
+    string factorPattern = "(\\d)+(\\.(\\d)+)?";  // 一个数，整/浮都可以，不含先导正负号
+    regex var_name(namePattern);                  // 变量名
+    regex var_range(rangePattern);                // 变量范围     // 暂时只支持整数
+    regex constraint(constraintPattern);          // 约束
+    regex factor(factorPattern);
 
     // 输入变量
     {
@@ -105,7 +157,7 @@ Problem* InputPblm() {
             else if (str.substr(0, 2) == "<=")
                 rhs = make_pair(SMALL_EQUAL, stod(str.substr(2)));
 
-            tVar var(name, rhs);
+            tVar var(name, rhs, 0.0);
             pblm->X.push_back(var);
         }
     }
@@ -131,13 +183,13 @@ Problem* InputPblm() {
         result.erase(0, 4);
         transform(first4.begin(), first4.end(), first4.begin(), ::tolower);  // 转小写
         if (first4 == "max ")
-            pblm->maxOrmin = Max;
+            pblm->maxOrMin = Max;
         else if (first4 == "min ")
-            pblm->maxOrmin = Min;
+            pblm->maxOrMin = Min;
         else
             cout << "minmax Error!" << endl;
 
-        // 分析目标函数
+        // 分析目标函数的变量部分
         result.erase(remove(result.begin(), result.end(), '*'), result.end());  // 删除*
         result.erase(remove(result.begin(), result.end(), ' '), result.end());  // 删除空格
         sregex_iterator name_pos(result.cbegin(), result.cend(), var_name);
@@ -147,7 +199,7 @@ Problem* InputPblm() {
             // 寻找并记录系数C[i]
             double c;  // c[i]
             string prefix = name_pos->prefix().str();
-            size_t last_not_num = prefix.find_last_not_of("0123456789");  // 暂时只支持整数
+            size_t last_not_num = prefix.find_last_not_of(".0123456789");
             if (prefix.size() == 0)
                 c = 1;  // name + x2 <= 3
             else if (last_not_num == string::npos)
@@ -159,8 +211,12 @@ Problem* InputPblm() {
                     c = -1.0;
                 else
                     cout << "Ci Error!" << endl;
-            } else
-                c = stod(prefix.substr(last_not_num));  // x1- 3name>=2;
+            } else {
+                if (prefix[last_not_num] == '+' || prefix[last_not_num] == '-')  // x1+ 3name>=2;
+                    c = stod(prefix.substr(last_not_num));                       // 包括了last_not_num
+                else
+                    cout << "Ci Error!" << endl;
+            }
 
             // 找到对应的变量并修改C[i]，即确定i
             string name = name_pos->str();
@@ -169,10 +225,27 @@ Problem* InputPblm() {
                 if ((*it).name == name)
                     break;
             if (it == pblm->X.end())
-                cout << "var not found,error!" << endl;
+                cout << "var not found, error!" << endl;
             int index = distance(pblm->X.begin(), it);
-            pblm->C.at(index) = c;
+            pblm->C.at(index) += c;  // 考虑到可能有 x1+x2+x1的情况
         }
+
+        // 分析目标函数中可能存在的常数项
+        // 特点为前置为+或者-或者null，后置为+或者-或者null
+        sregex_iterator factor_pos(result.cbegin(), result.cend(), factor);
+        for (sregex_iterator end; factor_pos != end; ++factor_pos) {
+            // 寻找并记录常数项ofst
+            double ofst = stod(factor_pos->str());
+            string suffix = factor_pos->suffix().str();
+            string prefix = factor_pos->prefix().str();
+            if (suffix.size() != 0 && suffix[0] != '+' && suffix[0] != '-')
+                continue;
+            if (prefix.size() == 0 || prefix.back() == '+')
+                pblm->offset += ofst;
+            else if (prefix.back() == '-')
+                pblm->offset += -ofst;
+        }
+        pblm->OutputTarget();
     }
 
     // 输入约束条件
@@ -228,7 +301,7 @@ Problem* InputPblm() {
                 // 寻找并记录系数P[i][j]
                 double p;  // P[i][j]
                 string prefix = name_pos->prefix().str();
-                size_t last_not_num = prefix.find_last_not_of("0123456789");  // 暂时只支持整数
+                size_t last_not_num = prefix.find_last_not_of(".0123456789");  
                 if (prefix.size() == 0)
                     p = 1;  // name + x2 <= 3
                 else if (last_not_num == string::npos)
@@ -240,8 +313,12 @@ Problem* InputPblm() {
                         p = -1.0;
                     else
                         cout << "Pij Error!" << endl;
-                } else
-                    p = stod(prefix.substr(last_not_num));  // x1- 3name>=2;
+                } else {
+                    if (prefix[last_not_num] == '+' || prefix[last_not_num] == '-')  // x1+ 3name>=2;
+                        p = stod(prefix.substr(last_not_num));                       // 包括了last_not_num
+                    else
+                        cout << "Pij Error!" << endl;
+                }
 
                 // 找到对应的变量并修改P[i][j]，即确定i
                 string name = name_pos->str();
@@ -253,7 +330,7 @@ Problem* InputPblm() {
                     cout << "var not found,error!" << endl;
                 int index = distance(pblm->X.begin(), itx);
                 // cout << "index is " << index << ", line_num is " << line_num << endl;
-                pblm->P.at(index).at(line_num) = p;
+                pblm->P.at(index).at(line_num) += p;
             }
             line_num++;
         }
@@ -292,9 +369,9 @@ void Problem::OutputVar() {
 }
 
 void Problem::OutputTarget() {
-    if (maxOrmin == Max)
+    if (maxOrMin == Max)
         cout << "max " << flush;
-    else if (maxOrmin == Min)
+    else if (maxOrMin == Min)
         cout << "min " << flush;
     vValue::const_iterator itc = C.cbegin();
     vX::const_iterator itx = X.cbegin();
@@ -317,7 +394,7 @@ void Problem::OutputTarget() {
 }
 
 void Problem::OutputConstraint() {
-    for (vRange::const_iterator itb = B.cbegin(); itb != B.cend(); ++itb) {  // 按约束遍历
+    for (vB::const_iterator itb = B.cbegin(); itb != B.cend(); ++itb) {  // 按约束遍历
         int index = distance(B.cbegin(), itb);
         int Psz = P.size();
         for (int i = 0; i < Psz; ++i) {
@@ -364,25 +441,25 @@ Problem* Problem::Dualize() {
 
     // 约束条件右边项数值决定目标函数系数
     // 约束条件不等号决定变量取值范围(Max相反，Min相同)
-    vRange::const_iterator itb = B.cbegin();
+    vB::const_iterator itb = B.cbegin();
     for (int index = 0; itb != B.cend(); ++itb, ++index) {
         Range range;
         if ((*itb).first == EQUAL)
             range = UNLIMITED;
         else if ((*itb).first == SMALL_EQUAL) {
-            if (maxOrmin == Max)
+            if (maxOrMin == Max)
                 range = LARGE_EQUAL;
-            else if (maxOrmin == Min)
+            else if (maxOrMin == Min)
                 range = SMALL_EQUAL;
         } else if ((*itb).first == LARGE_EQUAL) {
-            if (maxOrmin == Max)
+            if (maxOrMin == Max)
                 range = SMALL_EQUAL;
-            else if (maxOrmin == Min)
+            else if (maxOrMin == Min)
                 range = LARGE_EQUAL;
         } else
             cout << "Range Error!" << endl;
         tRightSide rhs(range, 0);
-        tVar var("line" + to_string(index), rhs);
+        tVar var("line" + to_string(index), rhs, 0.0);
         dual->X.push_back(var);
         dual->C.push_back((*itb).second);
     }
@@ -396,14 +473,14 @@ Problem* Problem::Dualize() {
         if ((*itx).rhs.first == UNLIMITED)
             range = EQUAL;
         else if ((*itx).rhs.first == SMALL_EQUAL) {
-            if (maxOrmin == Max)
+            if (maxOrMin == Max)
                 range = SMALL_EQUAL;
-            else if (maxOrmin == Min)
+            else if (maxOrMin == Min)
                 range = LARGE_EQUAL;
         } else if ((*itx).rhs.first == LARGE_EQUAL) {
-            if (maxOrmin == Max)
+            if (maxOrMin == Max)
                 range = LARGE_EQUAL;
-            else if (maxOrmin == Min)
+            else if (maxOrMin == Min)
                 range = SMALL_EQUAL;
         } else
             cout << "Range Error!" << endl;
@@ -424,22 +501,23 @@ Problem* Problem::Dualize() {
     }
 
     // 目标函数变化
-    if (maxOrmin == Max)
-        dual->maxOrmin = Min;
+    if (maxOrMin == Max)
+        dual->maxOrMin = Min;
     else
-        dual->maxOrmin = Max;
+        dual->maxOrMin = Max;
     return dual;
 }
 
-Problem* Problem::Standandlize() {
+Problem* Problem::Standardlize() {
     // 生成一个标准型
+    cout << "标准化！" << endl;
     Problem* pblm = new Problem(*this);
 
     // 变为求目标函数最大化
-    if (maxOrmin == Min) {
+    if (maxOrMin == Min) {
         for (vValue::iterator itc = pblm->C.begin(); itc != pblm->C.end(); itc++)
             *itc = -*itc;
-        pblm->maxOrmin = Max;
+        pblm->maxOrMin = Max;
         pblm->offset = -pblm->offset;
     }
 
@@ -447,10 +525,12 @@ Problem* Problem::Standandlize() {
     for (vX::iterator itx = pblm->X.begin(); itx != pblm->X.end(); ++itx) {
         double bound = (*itx).rhs.second;
         string bound_str = to_string(bound);
-        if (equals(bound, floor(bound)))  // bound = 3.0001
-            bound_str = to_string(int(bound));
-        else if (equals(bound, floor(bound) + 1))  // bound = 2.9999
-            bound_str = to_string(int(bound) + 1);
+        // if (equals(bound, floor(bound)))  // bound = 3.0001 / -2.9999
+        //     bound_str = to_string(int(bound));
+        // else if (equals(bound, floor(bound) + 1))  // bound = 2.9999 / -3.0001
+        //     bound_str = to_string(int(bound) + 1);
+        if (IsInt(bound))
+            bound_str = to_string(SimplifyToInt(bound));
         regex_replace(bound_str, std::regex("\\."), "dot");
         int index = distance(pblm->X.begin(), itx);
         if ((*itx).rhs.first == EQUAL)
@@ -460,10 +540,11 @@ Problem* Problem::Standandlize() {
         else if ((*itx).rhs.first == LARGE_EQUAL) {
             if (equals(bound, 0))
                 continue;
+            cout << index << "号变量大于等于" << bound << "需要修正" << endl;
             (*itx).name = "__" + (*itx).name + "_minus_" + bound_str + "__";  // x'=x-a,x=x'+a
             pblm->offset += bound * pblm->C.at(index);
             vValue::iterator itp_in = pblm->P.at(index).begin();
-            vRange::iterator itb = pblm->B.begin();
+            vB::iterator itb = pblm->B.begin();
             for (; itp_in != pblm->P.at(index).end() && itb != pblm->B.end(); ++itp_in, ++itb)
                 (*itb).second -= bound * (*itp_in);
             (*itx).rhs = make_pair(LARGE_EQUAL, 0);
@@ -471,11 +552,12 @@ Problem* Problem::Standandlize() {
 
         // x<=a,x'=-x+a,x=-x'+a
         else if ((*itx).rhs.first == SMALL_EQUAL) {
+            cout << index << "号变量小于等于" << bound << "需要修正" << endl;
             (*itx).name = "__minus_" + (*itx).name + "_plus_" + bound_str + "__";  // x'=-x+a,x=-x'+a
             pblm->offset += bound * pblm->C.at(index);
             pblm->C.at(index) = -pblm->C.at(index);  // Ci取负
             vValue::iterator itp_in = pblm->P.at(index).begin();
-            vRange::iterator itb = pblm->B.begin();
+            vB::iterator itb = pblm->B.begin();
             for (; itp_in != pblm->P.at(index).end() && itb != pblm->B.end(); ++itp_in, ++itb) {
                 (*itb).second -= bound * (*itp_in);
                 (*itp_in) = -(*itp_in);  // Pi全部取负
@@ -485,11 +567,12 @@ Problem* Problem::Standandlize() {
 
         // x unlimited,x = x_1-x_2
         else if ((*itx).rhs.first == UNLIMITED) {
+            cout << index << "号变量取值范围无限制，需要修正" << endl;
             string name = (*itx).name;
             (*itx).rhs = make_pair(LARGE_EQUAL, 0);
             (*itx).name = "__" + name + "_part1__";
             tRightSide rhs(LARGE_EQUAL, 0);
-            tVar var("__" + name + "_part2__", rhs);
+            tVar var("__" + name + "_part2__", rhs, 0.0);
             itx = pblm->X.emplace(itx + 1, var);                               // 迭代器可能失效，需要重新获取
             pblm->C.emplace(pblm->C.begin() + index + 1, -pblm->C.at(index));  // Ci' = -Ci
             pblm->P.emplace(pblm->P.begin() + index + 1, pblm->P.at(index));   // Pi' = Pi
@@ -501,7 +584,7 @@ Problem* Problem::Standandlize() {
     }
 
     // 保证约束条件均为等于某非负值
-    for (vRange::iterator itb = pblm->B.begin(); itb != pblm->B.end(); itb++) {
+    for (vB::iterator itb = pblm->B.begin(); itb != pblm->B.end(); itb++) {
         int index = distance(pblm->B.begin(), itb);
 
         // 保持B的非负性
@@ -519,7 +602,7 @@ Problem* Problem::Standandlize() {
         // 引入剩余变量remain variable
         if ((*itb).first == LARGE_EQUAL) {
             tRightSide rhs(LARGE_EQUAL, 0);
-            tVar var("__remain_" + to_string(index) + "__", rhs);
+            tVar var("__remain_" + to_string(index) + "__", rhs, 0.0);
             pblm->X.push_back(var);
             pblm->C.push_back(0.0);
             pblm->P.push_back(vector(pblm->B.size(), 0.0));
@@ -529,7 +612,7 @@ Problem* Problem::Standandlize() {
         // 引入松弛变量flabby variable
         else if ((*itb).first == SMALL_EQUAL) {
             tRightSide rhs(LARGE_EQUAL, 0);
-            tVar var("__flabby_" + to_string(index) + "__", rhs);
+            tVar var("__flabby_" + to_string(index) + "__", rhs, 0.0);
             pblm->X.push_back(var);
             pblm->C.push_back(0.0);
             pblm->P.push_back(vector(pblm->B.size(), 0.0));
@@ -545,19 +628,169 @@ bool Problem::IsStandard() {
     // 检验对象是否已标准化
 
     // 目标函数取最大化
-    if (maxOrmin != Max)
+    if (maxOrMin != Max)
         return 0;
 
     // 所有变量取值都为非负
     for (vX::const_iterator itx = X.cbegin(); itx != X.cend(); ++itx)
-        if ((*itx).rhs.first == LARGE_EQUAL || !equals((*itx).rhs.second, 0))
+        if ((*itx).rhs.first != LARGE_EQUAL || !equals((*itx).rhs.second, 0))
             return 0;
 
     // 所有约束都为等于某非负值
-    for (vRange::const_iterator itb = B.cbegin(); itb != B.cend(); ++itb)
+    for (vB::const_iterator itb = B.cbegin(); itb != B.cend(); ++itb)
         if ((*itb).first != EQUAL || (*itb).second < 0)
             return 0;
 
-    cout << "Problem is Standard!" << endl;
+    // cout << "Problem is Standard!" << endl;
     return 1;
+}
+
+Range Problem::RangeB() {
+    // 检查B的值是否为全非负/全非正/
+    int positive = 0, negative = 0, zero = 0;
+    for (vB::const_iterator itb = B.cbegin(); itb != B.cend(); ++itb) {
+        if (equals(0, (*itb).second)) {
+            zero++;
+            continue;
+        } else if ((*itb).second > 0)
+            positive++;
+        else if ((*itb).second < 0)
+            negative++;
+        else
+            cout << "Error in RangeB" << endl;
+    }
+    if (!positive && !negative)  // B全0
+        return EQUAL;
+    if (positive && !negative)  // B非负
+        return LARGE_EQUAL;
+    if (!positive && negative)  // B非正
+        return SMALL_EQUAL;
+    return UNLIMITED;  // B有正有负
+}
+
+Range Problem::RangeC() {
+    // 检查C的值是否为全非负/全非正/
+    int positive = 0, negative = 0, zero = 0;
+    for (vValue::const_iterator itc = C.cbegin(); itc != C.cend(); ++itc) {
+        if (equals(0, *itc)) {
+            zero++;
+            continue;
+        } else if (*itc > 0)
+            positive++;
+        else if (*itc < 0)
+            negative++;
+        else
+            cout << "Error in RangeC" << endl;
+    }
+    if (!positive && !negative)  // C全0
+        return EQUAL;
+    if (positive && !negative)  // C非负
+        return LARGE_EQUAL;
+    if (!positive && negative)  // C非正
+        return SMALL_EQUAL;
+    return UNLIMITED;  // C有正有负
+}
+
+void Problem::ChangeB(Range range) {
+    if (range == LARGE_EQUAL)
+        for (vB::iterator itb = B.begin(); itb != B.end(); itb++) {
+            int index = distance(B.begin(), itb);
+            // 保持B的非负性
+            if ((*itb).second < 0) {
+                (*itb).second = -(*itb).second;
+                if ((*itb).first == LARGE_EQUAL)
+                    (*itb).second = SMALL_EQUAL;
+                else if ((*itb).second == SMALL_EQUAL)
+                    (*itb).first = LARGE_EQUAL;
+                int Psz = P.size();
+                for (int i = 0; i < Psz; ++i)
+                    P.at(i).at(index) = -P.at(i).at(index);
+            }
+        }
+    if (range == SMALL_EQUAL)
+        for (vB::iterator itb = B.begin(); itb != B.end(); itb++) {
+            int index = distance(B.begin(), itb);
+            // 保持B的非正性
+            if ((*itb).second > 0) {
+                (*itb).second = -(*itb).second;
+                if ((*itb).first == LARGE_EQUAL)
+                    (*itb).second = SMALL_EQUAL;
+                else if ((*itb).second == SMALL_EQUAL)
+                    (*itb).first = LARGE_EQUAL;
+                int Psz = P.size();
+                for (int i = 0; i < Psz; ++i)
+                    P.at(i).at(index) = -P.at(i).at(index);
+            }
+        }
+    if (range == EQUAL || range == UNLIMITED) {
+        cout << "not finished" << endl;
+    }
+}
+
+tResult* Problem::GetResult() {
+    tResult* rst = new tResult();
+    rst->first = this->offset;
+    rst->second.clear();
+    for (vX::const_iterator itx = this->X.cbegin(); itx != this->X.cend(); ++itx)
+        rst->second.push_back((*itx).value);
+    return rst;
+}
+
+void Problem::OutputResult() {
+    if (result == NO_SOLUTION) {
+        cout << "该问题无可行解" << endl;
+        return;
+    } else if (result == UNBOUNDED) {
+        cout << "该问题无有界最优解" << endl;
+        return;
+    }
+    cout << "target value is " << offset;
+    cout << ", get at (";
+    for (vX::const_iterator itx = X.cbegin();;) {
+        cout << (*itx).name << "=" << (*itx).value;
+        if (++itx != X.cend())  // 此处判断循环是否结束
+            cout << ", ";
+        else
+            break;
+    }
+    cout << ")" << endl;
+}
+
+bool Problem::TestConstraint() {
+    // this->OutputPblm();
+    assert(this->IsStandard());
+    for (vB::const_iterator itb = B.cbegin(); itb != B.cend(); ++itb) {  // 按约束遍历
+        double sigma = 0;
+        int index = distance(B.cbegin(), itb);
+        int Psz = P.size();
+        for (int i = 0; i < Psz; ++i)
+            sigma += P.at(i).at(index) * X.at(i).value;
+        // for (int i = 0; i < Psz; ++i)
+        //     cout << "P is " << P.at(i).at(index) << ", X is " << X.at(i).value << endl;
+        if (!equals(sigma, (*itb).second)) {
+            cout << "sigma is " << sigma << ", rhs is " << (*itb).second << endl;
+            return false;
+        }
+    }
+    return true;
+}
+
+void Problem::SimplifyDouble() {
+    for (vX::iterator itx = X.begin(); itx != X.end(); ++itx)
+        if (IsInt((*itx).value))
+            (*itx).value = SimplifyToInt((*itx).value);
+    for (vValue::iterator itc = C.begin(); itc != C.cend(); ++itc)
+        if (IsInt(*itc))
+            (*itc) = SimplifyToInt((*itc));
+
+    if (IsInt(offset))
+        offset = SimplifyToInt(offset);
+    for (vB::iterator itb = B.begin(); itb != B.end(); ++itb) {
+        if (IsInt((*itb).second))
+            (*itb).second = SimplifyToInt((*itb).second);
+        int index = distance(B.begin(), itb);
+        for (vP::iterator itp = P.begin(); itp != P.end(); ++itp)
+            if (IsInt((*itp).at(index)))
+                (*itp).at(index) = SimplifyToInt((*itp).at(index));
+    }
 }
