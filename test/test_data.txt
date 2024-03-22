@@ -51,7 +51,7 @@ max 80x1+100x2;
 4x1+6x2<=200;
 
 line0+,line1+,line2+,line3+;
-min 360*line0 +200*line1 +250*line2 +200*line3;
+min 360*line0 +200*line1 +250*line2 +200*line3 +3900;
 8*line0 +4*line1 +3*line2 +4*line3 >= 80
 4*line0 +5*line1 +10*line2 +6*line3 >= 100;
 
@@ -97,6 +97,11 @@ max 3x1-x2;
 3x1-2x2<=3,
 -5x1-4x2<=-10,
 2x1+x2<=5;
+
+x1+,x2+;
+max 7x1+9x2;
+-x1+3x2<=6,
+7x1+x2<=35;
 
 注意最后一条约束
 x1+,x2+,x3+,x4+,x5+;

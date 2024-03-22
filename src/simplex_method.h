@@ -120,13 +120,13 @@ Base* Initialize(Problem* pblm) {
     // cout << "Base has been Gotten!" << endl;
     delete auxiliaryPblm;
     pblm->result = UNKNOWN;
-    // pblm->OutputTarget();
+    //pblm->OutputTarget();
     return base;
 }
 
 ResultType Simplex(Problem* pblm, Base* base) {
     // 先定入基，再定出基
-    cout << "Simplex!" << endl;
+    cout << "Simplex!";
     int m = pblm->B.size(), n = pblm->X.size();
     double maxLamda = 0;    // 寻找最大的检验数对应变量入基
     int enterBaseVar = -1;  // 入基变量
@@ -180,7 +180,7 @@ ResultType Simplex(Problem* pblm, Base* base) {
     base->enterBaseVar = enterBaseVar;
     base->leaveBaseVar = leaveBaseVar;
 
-    cout << "出基变量为" << pblm->X.at(leaveBaseVar).name << "; 入基变量为" << pblm->X.at(enterBaseVar).name << endl;
+    cout << "    出基变量为" << pblm->X.at(leaveBaseVar).name << "; 入基变量为" << pblm->X.at(enterBaseVar).name << endl;
     // pblm->OutputTarget();
     return UNKNOWN;  // 继续进行
 }
@@ -188,7 +188,7 @@ ResultType Simplex(Problem* pblm, Base* base) {
 void Pivot(Problem* pblm, Base* base) {
     // 对给定的入基变量与出基变量，执行转轴(换基)操作
     // 出基变量在r行，xk为入基变量，将r行k列元素变为1
-    cout << "Pivot!" << endl;
+    cout << "Pivot!";
     int m = pblm->B.size(), n = pblm->X.size();
     int r = base->constraintOfBaseVar[base->leaveBaseVar];  // 出基变量所在方程 // in [0,m)
     int k = base->enterBaseVar;                             // 入基变量编号     // in [0,n)
@@ -198,6 +198,7 @@ void Pivot(Problem* pblm, Base* base) {
     pblm->B.at(r).second /= Pkr;
     pblm->X.at(k).value += pblm->B.at(r).second;  // 入基变量变大
     pblm->X.at(base->leaveBaseVar).value = 0;     // 出基变量归零
+    //pblm->OutputResult();
 
     for (int i_m = 0; i_m < m; i_m++) {
         if (i_m == r)
@@ -208,7 +209,7 @@ void Pivot(Problem* pblm, Base* base) {
         pblm->B.at(i_m).second -= Pkm * pblm->B.at(r).second;
         pblm->X.at(base->baseVarOfConstraint[i_m]).value -= Pkm * pblm->B.at(r).second;  // 所有其他基变量都要相应变小
     }
-
+    cout << "    当前目标函数为";
     pblm->OutputTarget();
 
     base->constraintOfBaseVar[k] = r;                   // k号变量是r号方程的基变量

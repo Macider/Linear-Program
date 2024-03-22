@@ -58,7 +58,7 @@ class Problem {
     vP P;               // 工艺系数 P[i_n][i_m]
     vValue C;           // 目标函数系数
     vB B;               // 约束条件右边项 //B>=0
-    double offset = 0;  // 目标函数修正值
+    double offset = 0;  // 目标函数修正值，注意它不能表示最后结果
     ResultType result = UNKNOWN;
     Problem() {}
     Problem(const Problem& other)
@@ -67,7 +67,7 @@ class Problem {
         this->offset = other.offset;
     }
     Problem* Dualize();
-    Problem* Standardlize();
+    Problem* Standardlize(Range range_b = LARGE_EQUAL);
     bool IsStandard();
 
     bool TestConstraint();
@@ -301,7 +301,7 @@ Problem* InputPblm() {
                 // 寻找并记录系数P[i][j]
                 double p;  // P[i][j]
                 string prefix = name_pos->prefix().str();
-                size_t last_not_num = prefix.find_last_not_of(".0123456789");  
+                size_t last_not_num = prefix.find_last_not_of(".0123456789");
                 if (prefix.size() == 0)
                     p = 1;  // name + x2 <= 3
                 else if (last_not_num == string::npos)
@@ -508,7 +508,7 @@ Problem* Problem::Dualize() {
     return dual;
 }
 
-Problem* Problem::Standardlize() {
+Problem* Problem::Standardlize(Range range_b) {
     // 生成一个标准型
     cout << "标准化！" << endl;
     Problem* pblm = new Problem(*this);
@@ -587,16 +587,17 @@ Problem* Problem::Standardlize() {
     for (vB::iterator itb = pblm->B.begin(); itb != pblm->B.end(); itb++) {
         int index = distance(pblm->B.begin(), itb);
 
-        // 保持B的非负性
-        if ((*itb).second < 0) {
-            (*itb).second = -(*itb).second;
-            if ((*itb).first == LARGE_EQUAL)
-                (*itb).second = SMALL_EQUAL;
-            else if ((*itb).second == SMALL_EQUAL)
-                (*itb).first = LARGE_EQUAL;
-            int Psz = pblm->P.size();
-            for (int i = 0; i < Psz; ++i)
-                pblm->P.at(i).at(index) = -pblm->P.at(i).at(index);
+        if (range_b == LARGE_EQUAL) {  // 保持B的非负性
+            if ((*itb).second < 0) {
+                (*itb).second = -(*itb).second;
+                if ((*itb).first == LARGE_EQUAL)
+                    (*itb).second = SMALL_EQUAL;
+                else if ((*itb).second == SMALL_EQUAL)
+                    (*itb).first = LARGE_EQUAL;
+                int Psz = pblm->P.size();
+                for (int i = 0; i < Psz; ++i)
+                    pblm->P.at(i).at(index) = -pblm->P.at(i).at(index);
+            }
         }
 
         // 引入剩余变量remain variable
@@ -729,9 +730,15 @@ void Problem::ChangeB(Range range) {
 
 tResult* Problem::GetResult() {
     tResult* rst = new tResult();
-    rst->first = this->offset;
+    for (vX::const_iterator itx = X.cbegin(); itx != X.cend(); ++itx) {
+        int index = distance(X.cbegin(), itx);
+        rst->first += (*itx).value * C.at(index);
+    }
+    rst->first += offset;
+    if(IsInt(rst->first))
+        rst->first = SimplifyToInt(rst->first);
     rst->second.clear();
-    for (vX::const_iterator itx = this->X.cbegin(); itx != this->X.cend(); ++itx)
+    for (vX::const_iterator itx = X.cbegin(); itx != X.cend(); ++itx)
         rst->second.push_back((*itx).value);
     return rst;
 }
@@ -744,7 +751,15 @@ void Problem::OutputResult() {
         cout << "该问题无有界最优解" << endl;
         return;
     }
-    cout << "target value is " << offset;
+    double target_value = 0;
+    for (vX::const_iterator itx = X.cbegin(); itx != X.cend(); ++itx) {
+        int index = distance(X.cbegin(), itx);
+        target_value += (*itx).value * C.at(index);
+    }
+    target_value += offset;
+    if (IsInt(target_value))
+        target_value = SimplifyToInt(target_value);
+    cout << "target value is " << target_value;
     cout << ", get at (";
     for (vX::const_iterator itx = X.cbegin();;) {
         cout << (*itx).name << "=" << (*itx).value;

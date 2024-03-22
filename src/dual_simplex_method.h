@@ -15,15 +15,15 @@ Problem* DualSimplexMethod(Problem*);     // 依序调用initialize、simplex、
 // 函数区
 ResultType DualSimplex(Problem* pblm, Base* base) {
     // 先定出基，再定入基
-    cout << "Simplex!" << endl;
+    cout << "DualSimplex!" << endl;
     int m = pblm->B.size(), n = pblm->X.size();
 
-    double ofst = 0;
-    for (int i_m = 0; i_m < m; i_m++) {
-        cout << "C = " << pblm->C.at(base->baseVarOfConstraint[i_m]) << ",B = " << pblm->B.at(i_m).second << endl;
-        ofst -= pblm->C.at(base->baseVarOfConstraint[i_m]) * pblm->B.at(i_m).second;
-    }
-    pblm->offset = ofst;
+    // double ofst = 0;
+    // for (int i_m = 0; i_m < m; i_m++) {
+    //     // cout << "C = " << pblm->C.at(base->baseVarOfConstraint[i_m]) << ",B = " << pblm->B.at(i_m).second << endl;
+    //     ofst -= pblm->C.at(base->baseVarOfConstraint[i_m]) * pblm->B.at(i_m).second;
+    // }
+    // pblm->offset = ofst;
 
     int leaveBaseVar = -1;  // 出基变量
     double minB = 0;
@@ -41,17 +41,20 @@ ResultType DualSimplex(Problem* pblm, Base* base) {
         return MAYBE_MANY;
     }
     cout << "leaveBaseVar is " << leaveBaseVar << endl;
+    cout << "m is " << m << ", n is " << n << endl;
     double minLamda = DBL_MAX;  // 寻找最小的检验数对应变量入基
     int enterBaseVar = -1;
-    for (int i_n = 0; i_n < n; i_n++) {
-        cout << "i_n is " << i_n << endl;
-        cout << "constraintOfBaseVar[leaveBaseVar] is " << base->constraintOfBaseVar[leaveBaseVar] << endl;
+    pblm->OutputConstraint();       
+    for (int i_n = 0; i_n < n; i_n++) {         // 遍历所有变量，找到lamda最小的一个
+        // cout << "i_n is " << i_n << endl;
+        // cout << "constraintOfBaseVar[leaveBaseVar] is " << base->constraintOfBaseVar[leaveBaseVar] << endl;
         if (pblm->P.at(i_n).at(base->constraintOfBaseVar[leaveBaseVar]) >= 0)
             continue;
         double lamda = pblm->C.at(i_n);
         for (int i_m = 0; i_m < m; i_m++)
             lamda -= pblm->C.at(base->baseVarOfConstraint[i_m]) * pblm->P.at(i_n).at(i_m);
         lamda /= pblm->P.at(i_n).at(base->constraintOfBaseVar[leaveBaseVar]);
+        cout << "lamda is " << lamda << endl;
         if (lamda < minLamda) {
             minLamda = lamda;
             enterBaseVar = i_n;
@@ -71,14 +74,15 @@ Problem* DualSimplexMethod(Problem* pblm0) {
     // 前置要求：max、C<=0、B<=0、X>=0、约束取等
     Problem* pblm = new Problem(*pblm0);  // 深拷贝
     if (!pblm->IsStandard())
-        pblm = pblm->Standardlize();  // 标准化
-    if (pblm->RangeB() != SMALL_EQUAL)
+        pblm = pblm->Standardlize(UNLIMITED);  // 需要进行特殊标准化
+    if (pblm->RangeB() == LARGE_EQUAL)
         pblm->ChangeB(SMALL_EQUAL);
-    if (pblm->RangeC() != SMALL_EQUAL)
-        cout << "RangeC error!" << endl;
-    pblm->OutputPblm();
-    // pblm = pblm->Dualize();
-    int m = pblm->B.size(), n = pblm->X.size();
+    assert(pblm->RangeC() == SMALL_EQUAL);
+    // if (pblm->RangeB() != SMALL_EQUAL)
+    //     pblm->ChangeB(SMALL_EQUAL);
+    // if (pblm->RangeC() != SMALL_EQUAL)
+    //     cout << "RangeC error!" << endl;
+    // pblm->OutputPblm();
 
     Base* base = Initialize(pblm);
     if (pblm->result == UNKNOWN)
