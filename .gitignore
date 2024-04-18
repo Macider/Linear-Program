@@ -1,5 +1,5 @@
 *.exe
-/test
+test/
 *.pptx
-/.vs
-/.vscode
+.vs/
+.vscode/
