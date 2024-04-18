@@ -1,19 +1,19 @@
 /*
- * å•çº¯å½¢æ³•
+ * µ¥´¿ĞÎ·¨
  */
 #pragma once
 
 #include "./problem.h"
 using namespace std;
 
-// æ•°æ®ç»“æ„åŒº
+// Êı¾İ½á¹¹Çø
 class Base {
    public:
     int* baseVarOfConstraint;  // m member in [0,n)
-    int* constraintOfBaseVar;  // n member in [0,m] //äº’ä¸ºé€†è¿ç®—
-    int enterBaseVar;          // å°†è¦å…¥åŸºçš„å˜é‡
-    int leaveBaseVar;          // å°†è¦å‡ºåŸºçš„å˜é‡
-    double offset;             // åŸºå¯¹åº”çš„ç›®æ ‡å‡½æ•°çš„å¸¸æ•°é¡¹
+    int* constraintOfBaseVar;  // n member in [0,m] //»¥ÎªÄæÔËËã
+    int enterBaseVar;          // ½«ÒªÈë»ùµÄ±äÁ¿
+    int leaveBaseVar;          // ½«Òª³ö»ùµÄ±äÁ¿
+    double offset;             // »ù¶ÔÓ¦µÄÄ¿±êº¯ÊıµÄ³£ÊıÏî
     Base(int n, int m, double ofst) {
         this->baseVarOfConstraint = new int[m];
         fill_n(this->baseVarOfConstraint, m, -1);  // -1 = uncheck, n is error
@@ -24,15 +24,15 @@ class Base {
     }
 };
 
-// å£°æ˜åŒº
-Base* Initialize(Problem*);           // æ‰¾åˆ°ä¸€ç»„åŸºè§£
-ResultType Simplex(Problem*, Base*);  // æ‰¾åˆ°å…¥åŸºå˜é‡å’Œå‡ºåŸºå˜é‡
-void Pivot(Problem*, Base*);          // å…¥åŸº&å‡ºåŸº
-Problem* SimplexMethod(Problem*);     // ä¾åºè°ƒç”¨initializeã€simplexã€pivot
+// ÉùÃ÷Çø
+Base* Initialize(Problem*);           // ÕÒµ½Ò»×é»ù½â
+ResultType Simplex(Problem*, Base*);  // ÕÒµ½Èë»ù±äÁ¿ºÍ³ö»ù±äÁ¿
+void Pivot(Problem*, Base*);          // Èë»ù&³ö»ù
+Problem* SimplexMethod(Problem*);     // ÒÀĞòµ÷ÓÃinitialize¡¢simplex¡¢pivot
 
-// å‡½æ•°åŒº
+// º¯ÊıÇø
 Base* Initialize(Problem* pblm) {
-    // æ‰¾åˆ°ä¸€ç»„åŸºï¼Œå…¶åœ¨Pä¸­çš„å­é˜µä¸ºå•ä½é˜µ
+    // ÕÒµ½Ò»×é»ù£¬ÆäÔÚPÖĞµÄ×ÓÕóÎªµ¥Î»Õó
     cout << "Init!" << endl;
     int m = pblm->B.size(), n = pblm->X.size();
     Base* base = new Base(n, m, pblm->offset);
@@ -40,19 +40,19 @@ Base* Initialize(Problem* pblm) {
         pblm->X.at(i_n).value = 0;
 
     for (int i_m = 0; i_m < m; i_m++) {
-        bool flag_tmp = equals(pblm->B.at(i_m).second, 0);      // åº”å¯¹-x1-x2=0çš„æƒ…å†µï¼Œè¿‡äºä¸‘é™‹
-        for (int i_n = 0; i_n < n; i_n++) {           // éå†æ‰€æœ‰å˜é‡æ‰¾åˆ°åŸºå˜é‡
-            if (base->constraintOfBaseVar[i_n] >= 0)  // å·²ä½œä¸ºåŸºå˜é‡/ä¸ä¼šä½œä¸ºåŸºå˜é‡
+        bool flag_tmp = equals(pblm->B.at(i_m).second, 0);      // Ó¦¶Ô-x1-x2=0µÄÇé¿ö£¬¹ıÓÚ³óÂª
+        for (int i_n = 0; i_n < n; i_n++) {           // ±éÀúËùÓĞ±äÁ¿ÕÒµ½»ù±äÁ¿
+            if (base->constraintOfBaseVar[i_n] >= 0)  // ÒÑ×÷Îª»ù±äÁ¿/²»»á×÷Îª»ù±äÁ¿
                 continue;
             if (pblm->P.at(i_n).at(i_m) == 0)
                 continue;
-            if (pblm->P.at(i_n).at(i_m) != 1 && !flag_tmp) {  // è¯¥å˜é‡ä¸ä¼šä½œä¸ºä»»ä½•çº¦æŸæ¡ä»¶çš„åŸºå˜é‡
+            if (pblm->P.at(i_n).at(i_m) != 1 && !flag_tmp) {  // ¸Ã±äÁ¿²»»á×÷ÎªÈÎºÎÔ¼ÊøÌõ¼şµÄ»ù±äÁ¿
                 base->constraintOfBaseVar[i_n] = m;
                 continue;
             }
             for (int j_m = i_m + 1; j_m < m; j_m++)
-                if (pblm->P.at(i_n).at(j_m) != 0) {      // æ£€æŸ¥è¯¥åˆ—å…¶ä»–Pijä¸ä¸º0
-                    base->constraintOfBaseVar[i_n] = m;  // è¯¥å˜é‡ä¸ä¼šä½œä¸ºä»»ä½•çº¦æŸæ¡ä»¶çš„åŸºå˜é‡
+                if (pblm->P.at(i_n).at(j_m) != 0) {      // ¼ì²é¸ÃÁĞÆäËûPij²»Îª0
+                    base->constraintOfBaseVar[i_n] = m;  // ¸Ã±äÁ¿²»»á×÷ÎªÈÎºÎÔ¼ÊøÌõ¼şµÄ»ù±äÁ¿
                     break;
                 }
             if (base->constraintOfBaseVar[i_n] == -1) {
@@ -63,7 +63,7 @@ Base* Initialize(Problem* pblm) {
                     for (int j_n = 0; j_n < n; j_n++)
                         pblm->P.at(j_n).at(i_m) /= Pij;
                 }
-                pblm->X.at(i_n).value = pblm->B.at(i_m).second;  // ä¿®æ”¹Xçš„å–å€¼
+                pblm->X.at(i_n).value = pblm->B.at(i_m).second;  // ĞŞ¸ÄXµÄÈ¡Öµ
             }
         }
     }
@@ -72,25 +72,25 @@ Base* Initialize(Problem* pblm) {
     for (vValue::iterator itc_ = auxiliaryPblm->C.begin(); itc_ != auxiliaryPblm->C.end(); ++itc_)
         (*itc_) = 0;
     for (int i_m = 0; i_m < m; i_m++) {
-        if (base->baseVarOfConstraint[i_m] != -1)  // è¯¥çº¦æŸå·²æ‰¾åˆ°å¯¹åº”çš„åŸºå˜é‡
+        if (base->baseVarOfConstraint[i_m] != -1)  // ¸ÃÔ¼ÊøÒÑÕÒµ½¶ÔÓ¦µÄ»ù±äÁ¿
             continue;
         baseLack++;
         tRightSide rhs(LARGE_EQUAL, 0);
         tVar var("__auxiliary_" + to_string(i_m) + "__", rhs, 0.0);
         auxiliaryPblm->X.push_back(var);
         auxiliaryPblm->C.push_back(-1);
-        auxiliaryPblm->P.push_back(vector(auxiliaryPblm->B.size(), 0.0));
+        auxiliaryPblm->P.push_back(vector<double>(auxiliaryPblm->B.size(), 0.0));
         auxiliaryPblm->P.back().at(i_m) = 1;
     }
     if (baseLack) {
-        // cout << "è¾…åŠ©é—®é¢˜å¦‚ä¸‹æ‰€ç¤º" << endl;
+        // cout << "¸¨ÖúÎÊÌâÈçÏÂËùÊ¾" << endl;
         // auxiliaryPblm->OutputPblm();
-        cout << "å¼€å§‹è§£è¾…åŠ©é—®é¢˜" << endl;
+        cout << "¿ªÊ¼½â¸¨ÖúÎÊÌâ" << endl;
         auxiliaryPblm = SimplexMethod(auxiliaryPblm);
-        // cout << "è¾…åŠ©é—®é¢˜æœ€ç»ˆå‹ä¸º" << endl;
+        // cout << "¸¨ÖúÎÊÌâ×îÖÕĞÍÎª" << endl;
         // auxiliaryPblm->OutputPblm();
         // auxiliaryPblm->OutputResult();
-        // æ˜¯å¦ä¼šå‡ºç°æ— è§£ç­‰æƒ…å†µï¼Ÿï¼Ÿï¼Ÿ
+        // ÊÇ·ñ»á³öÏÖÎŞ½âµÈÇé¿ö£¿£¿£¿
         if (auxiliaryPblm->result != NO_SOLUTION) {
             vP::iterator itp = pblm->P.begin();
             vP::const_iterator itp_ = auxiliaryPblm->P.cbegin();
@@ -105,11 +105,11 @@ Base* Initialize(Problem* pblm) {
             for (; itx != pblm->X.end() && itx_ != auxiliaryPblm->X.cend(); ++itx, ++itx_)
                 (*itx) = (*itx_);
         }
-        cout << "åŸé—®é¢˜å¯è½¬åŒ–ä¸º" << endl;
+        cout << "Ô­ÎÊÌâ¿É×ª»¯Îª" << endl;
         pblm->OutputTarget();
         // pblm->OutputConstraint();
         // pblm->OutputResult();
-        // è‹¥æ­¤æ—¶çš„Xä¸ç¬¦åˆæ–¹ç¨‹çº¦æŸï¼Œåˆ™è¯´æ˜è¯¥é—®é¢˜æ— è§£
+        // Èô´ËÊ±µÄX²»·ûºÏ·½³ÌÔ¼Êø£¬ÔòËµÃ÷¸ÃÎÊÌâÎŞ½â
         if (!pblm->TestConstraint()) {
             cout << "No solution" << endl;
             pblm->result = NO_SOLUTION;
@@ -125,11 +125,11 @@ Base* Initialize(Problem* pblm) {
 }
 
 ResultType Simplex(Problem* pblm, Base* base) {
-    // å…ˆå®šå…¥åŸºï¼Œå†å®šå‡ºåŸº
+    // ÏÈ¶¨Èë»ù£¬ÔÙ¶¨³ö»ù
     cout << "Simplex!";
     int m = pblm->B.size(), n = pblm->X.size();
-    double maxLamda = 0;    // å¯»æ‰¾æœ€å¤§çš„æ£€éªŒæ•°å¯¹åº”å˜é‡å…¥åŸº
-    int enterBaseVar = -1;  // å…¥åŸºå˜é‡
+    double maxLamda = 0;    // Ñ°ÕÒ×î´óµÄ¼ìÑéÊı¶ÔÓ¦±äÁ¿Èë»ù
+    int enterBaseVar = -1;  // Èë»ù±äÁ¿
     for (int i_n = 0; i_n < n; i_n++)
         if (base->constraintOfBaseVar[i_n] < m)
             pblm->offset += pblm->C.at(i_n) * pblm->B.at(base->constraintOfBaseVar[i_n]).second;
@@ -138,32 +138,32 @@ ResultType Simplex(Problem* pblm, Base* base) {
             // cout << pblm->X.at(i_n).name << " is basic var" << endl;
             continue;
         }
-        for (int i_m = 0; i_m < m; i_m++)  // baseVarOfConstraint[i_m]æ˜¯ç¬¬i_må·æ–¹ç¨‹å¯¹åº”çš„åŸºå˜é‡
+        for (int i_m = 0; i_m < m; i_m++)  // baseVarOfConstraint[i_m]ÊÇµÚi_mºÅ·½³Ì¶ÔÓ¦µÄ»ù±äÁ¿
             pblm->C.at(i_n) -= pblm->C.at(base->baseVarOfConstraint[i_m]) * pblm->P.at(i_n).at(i_m);
         // cout << "Lamda[" << pblm->X.at(i_n).name << "] = " << pblm->C.at(i_n) << endl;
         if (pblm->C.at(i_n) >= maxLamda) {
-            enterBaseVar = i_n;  // æ€»æ˜¯é€‰æ‹©åºå·å¤§çš„å˜é‡å…¥åŸº
+            enterBaseVar = i_n;  // ×ÜÊÇÑ¡ÔñĞòºÅ´óµÄ±äÁ¿Èë»ù
             maxLamda = pblm->C.at(i_n);
         }
         if (pblm->C.at(i_n) > 0)
             for (int i_m = 0; i_m < m; i_m++) {
                 if (pblm->P.at(i_n).at(i_m) > 0)
                     break;
-                // è¿™é‡Œé»˜è®¤äº†må’Œnçš„å¤§å°å…³ç³»ï¼Œä¸åº”è¯¥ XXX ï¼Ÿï¼Ÿï¼Ÿ
+                // ÕâÀïÄ¬ÈÏÁËmºÍnµÄ´óĞ¡¹ØÏµ£¬²»Ó¦¸Ã XXX £¿£¿£¿
                 if (i_m == m - 1) {
-                    cout << "æ— æœ‰ç•Œæœ€ä¼˜è§£" << endl;
+                    cout << "ÎŞÓĞ½ç×îÓÅ½â" << endl;
                     return UNBOUNDED;
                 }
             }
     }
     for (int i_m = 0; i_m < m; i_m++)
-        pblm->C.at(base->baseVarOfConstraint[i_m]) = 0;  //  åŸºå˜é‡ç³»æ•°ç½®ä¸º0
-    if (enterBaseVar == -1) {                            // æ‰€æœ‰æ£€éªŒæ•°å‡ä¸ºè´Ÿ
-        cout << "æ‰€æœ‰æ£€éªŒæ•°å‡ä¸ºè´Ÿï¼Œåˆ°è¾¾æœ€ä¼˜è§£" << endl;
+        pblm->C.at(base->baseVarOfConstraint[i_m]) = 0;  //  »ù±äÁ¿ÏµÊıÖÃÎª0
+    if (enterBaseVar == -1) {                            // ËùÓĞ¼ìÑéÊı¾ùÎª¸º
+        cout << "ËùÓĞ¼ìÑéÊı¾ùÎª¸º£¬µ½´ï×îÓÅ½â" << endl;
         return ONE_SOLUTION;
     }
-    if (maxLamda == 0) {  // æœ€å¤§æ£€éªŒæ•°ä¸º0ï¼Œå¯èƒ½ä¸ºæ— ç©·å¤šæœ€ä¼˜è§£
-        cout << "æœ€å¤§æ£€éªŒæ•°ä¸º0" << endl;
+    if (maxLamda == 0) {  // ×î´ó¼ìÑéÊıÎª0£¬¿ÉÄÜÎªÎŞÇî¶à×îÓÅ½â
+        cout << "×î´ó¼ìÑéÊıÎª0" << endl;
         return MAYBE_MANY;
     }
     double minTheta = DBL_MAX;
@@ -173,31 +173,31 @@ ResultType Simplex(Problem* pblm, Base* base) {
             continue;
         if (pblm->B.at(i_m).second / pblm->P.at(enterBaseVar).at(i_m) < minTheta) {
             minTheta = pblm->B.at(i_m).second / pblm->P.at(enterBaseVar).at(i_m);
-            leaveBaseVar = base->baseVarOfConstraint[i_m];  // i_må·æ–¹ç¨‹å¯¹åº”çš„åŸºå˜é‡å‡ºåŸº
+            leaveBaseVar = base->baseVarOfConstraint[i_m];  // i_mºÅ·½³Ì¶ÔÓ¦µÄ»ù±äÁ¿³ö»ù
         }
     }
     assert(leaveBaseVar != -1);
     base->enterBaseVar = enterBaseVar;
     base->leaveBaseVar = leaveBaseVar;
 
-    cout << "    å‡ºåŸºå˜é‡ä¸º" << pblm->X.at(leaveBaseVar).name << "; å…¥åŸºå˜é‡ä¸º" << pblm->X.at(enterBaseVar).name << endl;
+    cout << "    ³ö»ù±äÁ¿Îª" << pblm->X.at(leaveBaseVar).name << "; Èë»ù±äÁ¿Îª" << pblm->X.at(enterBaseVar).name << endl;
     // pblm->OutputTarget();
-    return UNKNOWN;  // ç»§ç»­è¿›è¡Œ
+    return UNKNOWN;  // ¼ÌĞø½øĞĞ
 }
 
 void Pivot(Problem* pblm, Base* base) {
-    // å¯¹ç»™å®šçš„å…¥åŸºå˜é‡ä¸å‡ºåŸºå˜é‡ï¼Œæ‰§è¡Œè½¬è½´(æ¢åŸº)æ“ä½œ
-    // å‡ºåŸºå˜é‡åœ¨rè¡Œï¼Œxkä¸ºå…¥åŸºå˜é‡ï¼Œå°†rè¡Œkåˆ—å…ƒç´ å˜ä¸º1
+    // ¶Ô¸ø¶¨µÄÈë»ù±äÁ¿Óë³ö»ù±äÁ¿£¬Ö´ĞĞ×ªÖá(»»»ù)²Ù×÷
+    // ³ö»ù±äÁ¿ÔÚrĞĞ£¬xkÎªÈë»ù±äÁ¿£¬½«rĞĞkÁĞÔªËØ±äÎª1
     cout << "Pivot!";
     int m = pblm->B.size(), n = pblm->X.size();
-    int r = base->constraintOfBaseVar[base->leaveBaseVar];  // å‡ºåŸºå˜é‡æ‰€åœ¨æ–¹ç¨‹ // in [0,m)
-    int k = base->enterBaseVar;                             // å…¥åŸºå˜é‡ç¼–å·     // in [0,n)
+    int r = base->constraintOfBaseVar[base->leaveBaseVar];  // ³ö»ù±äÁ¿ËùÔÚ·½³Ì // in [0,m)
+    int k = base->enterBaseVar;                             // Èë»ù±äÁ¿±àºÅ     // in [0,n)
     double Pkr = pblm->P.at(k).at(r);
     for (int i_n = 0; i_n < n; i_n++)
         pblm->P.at(i_n).at(r) /= Pkr;
     pblm->B.at(r).second /= Pkr;
-    pblm->X.at(k).value += pblm->B.at(r).second;  // å…¥åŸºå˜é‡å˜å¤§
-    pblm->X.at(base->leaveBaseVar).value = 0;     // å‡ºåŸºå˜é‡å½’é›¶
+    pblm->X.at(k).value += pblm->B.at(r).second;  // Èë»ù±äÁ¿±ä´ó
+    pblm->X.at(base->leaveBaseVar).value = 0;     // ³ö»ù±äÁ¿¹éÁã
     //pblm->OutputResult();
 
     for (int i_m = 0; i_m < m; i_m++) {
@@ -207,20 +207,20 @@ void Pivot(Problem* pblm, Base* base) {
         for (int i_n = 0; i_n < n; i_n++)
             pblm->P.at(i_n).at(i_m) -= Pkm * pblm->P.at(i_n).at(r);
         pblm->B.at(i_m).second -= Pkm * pblm->B.at(r).second;
-        pblm->X.at(base->baseVarOfConstraint[i_m]).value -= Pkm * pblm->B.at(r).second;  // æ‰€æœ‰å…¶ä»–åŸºå˜é‡éƒ½è¦ç›¸åº”å˜å°
+        pblm->X.at(base->baseVarOfConstraint[i_m]).value -= Pkm * pblm->B.at(r).second;  // ËùÓĞÆäËû»ù±äÁ¿¶¼ÒªÏàÓ¦±äĞ¡
     }
-    cout << "    å½“å‰ç›®æ ‡å‡½æ•°ä¸º";
+    cout << "    µ±Ç°Ä¿±êº¯ÊıÎª";
     pblm->OutputTarget();
 
-    base->constraintOfBaseVar[k] = r;                   // kå·å˜é‡æ˜¯rå·æ–¹ç¨‹çš„åŸºå˜é‡
-    base->baseVarOfConstraint[r] = k;                   // rå·æ–¹ç¨‹ä»¥kå·å˜é‡ä¸ºåŸºå˜é‡
-    base->constraintOfBaseVar[base->leaveBaseVar] = m;  // å‡ºåŸºå˜é‡ä¸å†ä½œä¸ºä»»ä½•æ–¹ç¨‹çš„åŸºå˜é‡
+    base->constraintOfBaseVar[k] = r;                   // kºÅ±äÁ¿ÊÇrºÅ·½³ÌµÄ»ù±äÁ¿
+    base->baseVarOfConstraint[r] = k;                   // rºÅ·½³ÌÒÔkºÅ±äÁ¿Îª»ù±äÁ¿
+    base->constraintOfBaseVar[base->leaveBaseVar] = m;  // ³ö»ù±äÁ¿²»ÔÙ×÷ÎªÈÎºÎ·½³ÌµÄ»ù±äÁ¿
 }
 
 Problem* SimplexMethod(Problem* pblm0) {
-    // å¯¹è¾“å…¥çš„å¯¹è±¡è¿›è¡Œå•çº¯å½¢æ³•æ±‚è§£ï¼Œè¿”å›å˜å½¢ç»“æŸçš„å•çº¯å½¢æ³•
-    // å‰ç½®è¦æ±‚ï¼šmaxã€B>=0ã€X>=0ã€çº¦æŸå–ç­‰
-    Problem* pblm = new Problem(*pblm0);  // æ·±æ‹·è´
+    // ¶ÔÊäÈëµÄ¶ÔÏó½øĞĞµ¥´¿ĞÎ·¨Çó½â£¬·µ»Ø±äĞÎ½áÊøµÄµ¥´¿ĞÎ·¨
+    // Ç°ÖÃÒªÇó£ºmax¡¢B>=0¡¢X>=0¡¢Ô¼ÊøÈ¡µÈ
+    Problem* pblm = new Problem(*pblm0);  // Éî¿½±´
     if (!pblm->IsStandard())
         pblm = pblm->Standardlize();
     int m = pblm->B.size(), n = pblm->X.size();

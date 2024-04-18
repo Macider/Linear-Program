@@ -1,8 +1,9 @@
 /*
- * å®šä¹‰åŸºç¡€æ•°æ®ç»“æ„
+ * ¶¨Òå»ù´¡Êı¾İ½á¹¹
  */
 #pragma once
 #include <float.h>
+#include <sstream>
 #include <algorithm>
 #include <cassert>
 #include <cmath>
@@ -12,24 +13,24 @@
 #include <vector>
 using namespace std;
 
-// æ•°æ®ç»“æ„åŒº
+// Êı¾İ½á¹¹Çø
 enum MaxOrMin {
-    Max,
-    Min,
+	Max,
+	Min,
 };
 enum ResultType {
-    NO_SOLUTION = -1,
-    UNKNOWN = 0,
-    ONE_SOLUTION,
-    MAYBE_MANY,
-    MANY_SOLUTION,
-    UNBOUNDED,
+	NO_SOLUTION = -1,
+	UNKNOWN = 0,
+	ONE_SOLUTION,
+	MAYBE_MANY,
+	MANY_SOLUTION,
+	UNBOUNDED,
 };
 enum Range {
-    UNLIMITED,
-    LARGE_EQUAL,
-    SMALL_EQUAL,
-    EQUAL,
+	UNLIMITED,
+	LARGE_EQUAL,
+	SMALL_EQUAL,
+	EQUAL,
 };
 
 typedef pair<Range, double> tRightSide;
@@ -39,773 +40,783 @@ typedef vector<vValue> vP;
 typedef pair<double, vValue> tResult;
 
 struct tVar {
-    string name;
-    tRightSide rhs;
-    double value;
-    tVar(string name, tRightSide rhs, double value) {
-        this->name = name;
-        this->rhs = rhs;
-        this->value = value;
-    }
+	string name;
+	tRightSide rhs;
+	double value;
+	tVar(string name, tRightSide rhs, double value) {
+		this->name = name;
+		this->rhs = rhs;
+		this->value = value;
+	}
 };
 
 typedef vector<tVar> vX;
 
 class Problem {
-   public:
-    MaxOrMin maxOrMin;  // ä¼˜åŒ–ç›®æ ‡
-    vX X;               // å†³ç­–å˜é‡ä¿¡æ¯
-    vP P;               // å·¥è‰ºç³»æ•° P[i_n][i_m]
-    vValue C;           // ç›®æ ‡å‡½æ•°ç³»æ•°
-    vB B;               // çº¦æŸæ¡ä»¶å³è¾¹é¡¹ //B>=0
-    double offset = 0;  // ç›®æ ‡å‡½æ•°ä¿®æ­£å€¼ï¼Œæ³¨æ„å®ƒä¸èƒ½è¡¨ç¤ºæœ€åç»“æœ
-    ResultType result = UNKNOWN;
-    Problem() {}
-    Problem(const Problem& other)
-        : X(other.X), P(other.P), C(other.C), B(other.B) {
-        this->maxOrMin = other.maxOrMin;
-        this->offset = other.offset;
-    }
-    Problem* Dualize();
-    Problem* Standardlize(Range range_b = LARGE_EQUAL);
-    bool IsStandard();
+public:
+	MaxOrMin maxOrMin = Max;  // ÓÅ»¯Ä¿±ê
+	vX X;               // ¾ö²ß±äÁ¿ĞÅÏ¢
+	vP P;               // ¹¤ÒÕÏµÊı P[i_n][i_m]
+	vValue C;           // Ä¿±êº¯ÊıÏµÊı
+	vB B;               // Ô¼ÊøÌõ¼şÓÒ±ßÏî //B>=0
+	double offset = 0;  // Ä¿±êº¯ÊıĞŞÕıÖµ£¬×¢ÒâËü²»ÄÜ±íÊ¾×îºó½á¹û
+	ResultType result = UNKNOWN;
+	Problem() {}
+	Problem(const Problem& other)
+		: X(other.X), P(other.P), C(other.C), B(other.B) {
+		this->maxOrMin = other.maxOrMin;
+		this->offset = other.offset;
+	}
+	Problem* Dualize();
+	Problem* Standardlize(Range range_b = LARGE_EQUAL);
+	bool IsStandard();
 
-    bool TestConstraint();
-    void SimplifyDouble();
+	bool TestConstraint();
+	void SimplifyDouble();
 
-    tResult* GetResult();
-    void OutputResult();
+	tResult* GetResult();
+	void OutputResult();
 
-    void OutputPblm();
-    void OutputVar();
-    void OutputTarget();
-    void OutputConstraint();
+	void OutputPblm();
+	void OutputVar();
+	void OutputTarget();
+	void OutputConstraint();
 
-    Range RangeB();
-    Range RangeC();
-    void ChangeB(Range range);  // ç”¨äºå¯¹å¶å•çº¯å½¢æ³•
+	Range RangeB();
+	Range RangeC();
+	void ChangeB(Range range);  // ÓÃÓÚ¶ÔÅ¼µ¥´¿ĞÎ·¨
 };
 
-// å‡½æ•°åŒº
+// º¯ÊıÇø
 inline bool equals(double d1, double d2) {
-    return (d1 - d2 < 1e-6) && (d2 - d1 < 1e-6);
+	return (d1 - d2 < 1e-6) && (d2 - d1 < 1e-6);
 }
 inline bool IsInt(double d) {
-    // d always in [floor(d), floor(d) + 1];
-    // cout << "d is " << d << ", floor d is " << floor(d) << endl;
-    // cout << "equals(d, floor(d))çš„ç»“æœä¸º" << equals(d, floor(d)) << endl;
-    // cout << "equals(d, 1 + floor(d))çš„ç»“æœä¸º" << equals(d, 1 + floor(d)) << endl;
-    return equals(d, floor(d)) || equals(d, 1 + floor(d));
+	// d always in [floor(d), floor(d) + 1];
+	// cout << "d is " << d << ", floor d is " << floor(d) << endl;
+	// cout << "equals(d, floor(d))µÄ½á¹ûÎª" << equals(d, floor(d)) << endl;
+	// cout << "equals(d, 1 + floor(d))µÄ½á¹ûÎª" << equals(d, 1 + floor(d)) << endl;
+	return equals(d, floor(d)) || equals(d, 1 + floor(d));
 }
 inline int SimplifyToInt(double d) {
-    assert(IsInt(d));
-    if (equals(d, floor(d)))
-        return int(floor(d));
-    else if (equals(d, 1 + floor(d)))
-        return int(1 + floor(d));
-    else
-        cout << "SimplifyToInt Error" << endl;
-    return 0;
+	assert(IsInt(d));
+	if (equals(d, floor(d)))
+		return int(floor(d));
+	else if (equals(d, 1 + floor(d)))
+		return int(1 + floor(d));
+	else
+		cout << "SimplifyToInt Error" << endl;
+	return 0;
 }
 inline bool IsIntResult(tResult* rst) {
-    for (vValue::const_iterator itv = rst->second.cbegin(); itv != rst->second.cend(); ++itv)
-        if (!IsInt(*itv)) {
-            // cout << (*itv) << "is not int!!!" << endl;
-            return false;
-        }
-    return true;
+	for (vValue::const_iterator itv = rst->second.cbegin(); itv != rst->second.cend(); ++itv)
+		if (!IsInt(*itv)) {
+			// cout << (*itv) << "is not int!!!" << endl;
+			return false;
+		}
+	return true;
 }
 
 Problem* InputPblm() {
-    Problem* pblm = new Problem();
-    string namePattern = "[a-zA-Z_](\\w)*";  // C++å˜é‡æ ¼å¼
-    string rangePattern = "(\\+)|(-)|(\\?)|((>|<)=(\\s)*((\\+)|(-))?(\\d)+)";
-    string constraintPattern = "((>|<)?=(\\s)*((\\+)|(-))?(\\d)+)";
-    string factorPattern = "(\\d)+(\\.(\\d)+)?";  // ä¸€ä¸ªæ•°ï¼Œæ•´/æµ®éƒ½å¯ä»¥ï¼Œä¸å«å…ˆå¯¼æ­£è´Ÿå·
-    regex var_name(namePattern);                  // å˜é‡å
-    regex var_range(rangePattern);                // å˜é‡èŒƒå›´     // æš‚æ—¶åªæ”¯æŒæ•´æ•°
-    regex constraint(constraintPattern);          // çº¦æŸ
-    regex factor(factorPattern);
+	Problem* pblm = new Problem();
+	string namePattern = "[a-zA-Z_](\\w)*";  // C++±äÁ¿¸ñÊ½
+	string rangePattern = "(\\+)|(-)|(\\?)|((>|<)=(\\s)*((\\+)|(-))?(\\d)+)";
+	string constraintPattern = "((>|<)?=(\\s)*((\\+)|(-))?(\\d)+)";
+	string factorPattern = "(\\d)+(\\.(\\d)+)?";  // Ò»¸öÊı£¬Õû/¸¡¶¼¿ÉÒÔ£¬²»º¬ÏÈµ¼Õı¸ººÅ
+	regex var_name(namePattern);                  // ±äÁ¿Ãû
+	regex var_range(rangePattern);                // ±äÁ¿·¶Î§     // ÔİÊ±Ö»Ö§³ÖÕûÊı
+	regex constraint(constraintPattern);          // Ô¼Êø
+	regex factor(factorPattern);
 
-    // è¾“å…¥å˜é‡
-    {
-        cout << "Step1:è¯·è¾“å…¥å˜é‡åŠå–å€¼èŒƒå›´" << endl;
-        cout << "ä¾‹å¦‚x1>=0,x2<=3,x3+,x4-,x5?;" << endl;
-        cout << "ä»¥\",\"åˆ†éš”ï¼Œä»¥\";\"ç»“å°¾" << endl;
-        cout << ">=0å¯ç¼©å†™ä¸º+, <=0å¯ç¼©å†™ä¸º-, æ— çº¦æŸä»¥?è¡¨ç¤º" << endl;
+	// ÊäÈë±äÁ¿
+	{
+		cout << "Step1:ÇëÊäÈë±äÁ¿¼°È¡Öµ·¶Î§" << endl;
+		cout << "ÀıÈçx1>=0,x2<=3,x3+,x4-,x5?;" << endl;
+		cout << "ÒÔ\",\"·Ö¸ô£¬ÒÔ\";\"½áÎ²" << endl;
+		cout << ">=0¿ÉËõĞ´Îª+, <=0¿ÉËõĞ´Îª-, ÎŞÔ¼ÊøÒÔ?±íÊ¾" << endl;
 
-        // è¾“å…¥
-        string result;
-        getline(cin, result, ';');
-        replace(result.begin(), result.end(), '\n', ' ');  // æ¢è¡Œè§†ä½œç©ºæ ¼
+		// ÊäÈë
+		string result;
+		getline(cin, result, ';');
+		replace(result.begin(), result.end(), '\n', ' ');  // »»ĞĞÊÓ×÷¿Õ¸ñ
 
-        // åŒ¹é…å˜é‡åŠå–å€¼èŒƒå›´
-        sregex_iterator name_pos(result.cbegin(), result.cend(), var_name);
-        sregex_iterator range_pos(result.cbegin(), result.cend(), var_range);
-        for (sregex_iterator end; name_pos != end && range_pos != end; ++name_pos, ++range_pos) {
-            string name = name_pos->str();
-            string str = range_pos->str();
-            tRightSide rhs;
-            if (str == "\\")
-                rhs = make_pair(UNLIMITED, 0);
-            else if (str == "+")
-                rhs = make_pair(LARGE_EQUAL, 0);
-            else if (str == "-")
-                rhs = make_pair(SMALL_EQUAL, 0);
-            else if (str.substr(0, 2) == ">=")
-                rhs = make_pair(LARGE_EQUAL, stod(str.substr(2)));
-            else if (str.substr(0, 2) == "<=")
-                rhs = make_pair(SMALL_EQUAL, stod(str.substr(2)));
+		// Æ¥Åä±äÁ¿¼°È¡Öµ·¶Î§
+		sregex_iterator name_pos(result.cbegin(), result.cend(), var_name);
+		sregex_iterator range_pos(result.cbegin(), result.cend(), var_range);
+		for (sregex_iterator end; name_pos != end && range_pos != end; ++name_pos, ++range_pos) {
+			string name = name_pos->str();
+			string str = range_pos->str();
+			tRightSide rhs;
+			if (str == "\\")
+				rhs = make_pair(UNLIMITED, 0);
+			else if (str == "+")
+				rhs = make_pair(LARGE_EQUAL, 0);
+			else if (str == "-")
+				rhs = make_pair(SMALL_EQUAL, 0);
+			else if (str.substr(0, 2) == ">=")
+				rhs = make_pair(LARGE_EQUAL, stod(str.substr(2)));
+			else if (str.substr(0, 2) == "<=")
+				rhs = make_pair(SMALL_EQUAL, stod(str.substr(2)));
 
-            tVar var(name, rhs, 0.0);
-            pblm->X.push_back(var);
-        }
-    }
+			tVar var(name, rhs, 0.0);
+			pblm->X.push_back(var);
+		}
+	}
 
-    // æ ¹æ®åˆ—æ•°è°ƒæ•´æ•°æ®ç»“æ„
-    pblm->C.resize(pblm->X.size());
-    pblm->P.resize(pblm->X.size());
+	// ¸ù¾İÁĞÊıµ÷ÕûÊı¾İ½á¹¹
+	pblm->C.resize(pblm->X.size());
+	pblm->P.resize(pblm->X.size());
 
-    // è¾“å…¥ç›®æ ‡å‡½æ•°
-    {
-        cout << "Step2:è¯·è¾“å…¥ç›®æ ‡å‡½æ•°" << endl;
-        cout << "ä¾‹å¦‚max 2*x1-x2+4x3;" << endl;
-        cout << "ä»¥\"max\"æˆ–\"min\"å¼€å¤´ï¼Œä»¥\";\"ç»“å°¾" << endl;
+	// ÊäÈëÄ¿±êº¯Êı
+	{
+		cout << "Step2:ÇëÊäÈëÄ¿±êº¯Êı" << endl;
+		cout << "ÀıÈçmax 2*x1-x2+4x3;" << endl;
+		cout << "ÒÔ\"max\"»ò\"min\"¿ªÍ·£¬ÒÔ\";\"½áÎ²" << endl;
 
-        // è¾“å…¥
-        string result;
-        getline(cin, result, ';');
-        replace(result.begin(), result.end(), '\n', ' ');  // æ¢è¡Œè§†ä½œç©ºæ ¼
-        result.erase(0, result.find_first_not_of(' '));    // å»é™¤å‰å¯¼ç©ºæ ¼
+		// ÊäÈë
+		string result;
+		getline(cin, result, ';');
+		replace(result.begin(), result.end(), '\n', ' ');  // »»ĞĞÊÓ×÷¿Õ¸ñ
+		result.erase(0, result.find_first_not_of(' '));    // È¥³ıÇ°µ¼¿Õ¸ñ
 
-        // åˆ¤æ–­æœ€å¤§åŒ–/æœ€å°åŒ–
-        string first4 = result.substr(0, 4);
-        result.erase(0, 4);
-        transform(first4.begin(), first4.end(), first4.begin(), ::tolower);  // è½¬å°å†™
-        if (first4 == "max ")
-            pblm->maxOrMin = Max;
-        else if (first4 == "min ")
-            pblm->maxOrMin = Min;
-        else
-            cout << "minmax Error!" << endl;
+		// ÅĞ¶Ï×î´ó»¯/×îĞ¡»¯
+		string first4 = result.substr(0, 4);
+		result.erase(0, 4);
+		transform(first4.begin(), first4.end(), first4.begin(), ::tolower);  // ×ªĞ¡Ğ´
+		if (first4 == "max ")
+			pblm->maxOrMin = Max;
+		else if (first4 == "min ")
+			pblm->maxOrMin = Min;
+		else
+			cout << "minmax Error!" << endl;
 
-        // åˆ†æç›®æ ‡å‡½æ•°çš„å˜é‡éƒ¨åˆ†
-        result.erase(remove(result.begin(), result.end(), '*'), result.end());  // åˆ é™¤*
-        result.erase(remove(result.begin(), result.end(), ' '), result.end());  // åˆ é™¤ç©ºæ ¼
-        sregex_iterator name_pos(result.cbegin(), result.cend(), var_name);
-        for (sregex_iterator end; name_pos != end; ++name_pos) {
-            // å‡å®šæ˜¯ç¬¬iå·å˜é‡
+		// ·ÖÎöÄ¿±êº¯ÊıµÄ±äÁ¿²¿·Ö
+		result.erase(remove(result.begin(), result.end(), '*'), result.end());  // É¾³ı*
+		result.erase(remove(result.begin(), result.end(), ' '), result.end());  // É¾³ı¿Õ¸ñ
+		sregex_iterator name_pos(result.cbegin(), result.cend(), var_name);
+		for (sregex_iterator end; name_pos != end; ++name_pos) {
+			// ¼Ù¶¨ÊÇµÚiºÅ±äÁ¿
 
-            // å¯»æ‰¾å¹¶è®°å½•ç³»æ•°C[i]
-            double c;  // c[i]
-            string prefix = name_pos->prefix().str();
-            size_t last_not_num = prefix.find_last_not_of(".0123456789");
-            if (prefix.size() == 0)
-                c = 1;  // name + x2 <= 3
-            else if (last_not_num == string::npos)
-                c = stod(prefix);  // 2name + x2 <=3
-            else if (last_not_num == prefix.size() - 1) {
-                if (prefix[last_not_num] == '+')  // x1 + name<=4;
-                    c = 1.0;
-                else if (prefix[last_not_num] == '-')  // x1 - name<=4;
-                    c = -1.0;
-                else
-                    cout << "Ci Error!" << endl;
-            } else {
-                if (prefix[last_not_num] == '+' || prefix[last_not_num] == '-')  // x1+ 3name>=2;
-                    c = stod(prefix.substr(last_not_num));                       // åŒ…æ‹¬äº†last_not_num
-                else
-                    cout << "Ci Error!" << endl;
-            }
+			// Ñ°ÕÒ²¢¼ÇÂ¼ÏµÊıC[i]
+			double c;  // c[i]
+			string prefix = name_pos->prefix().str();
+			size_t last_not_num = prefix.find_last_not_of(".0123456789");
+			if (prefix.size() == 0)
+				c = 1;  // name + x2 <= 3
+			else if (last_not_num == string::npos)
+				c = stod(prefix);  // 2name + x2 <=3
+			else if (last_not_num == prefix.size() - 1) {
+				if (prefix[last_not_num] == '+')  // x1 + name<=4;
+					c = 1.0;
+				else if (prefix[last_not_num] == '-')  // x1 - name<=4;
+					c = -1.0;
+				else
+					cout << "Ci Error!" << endl;
+			}
+			else {
+				if (prefix[last_not_num] == '+' || prefix[last_not_num] == '-')  // x1+ 3name>=2;
+					c = stod(prefix.substr(last_not_num));                       // °üÀ¨ÁËlast_not_num
+				else
+					cout << "Ci Error!" << endl;
+			}
 
-            // æ‰¾åˆ°å¯¹åº”çš„å˜é‡å¹¶ä¿®æ”¹C[i]ï¼Œå³ç¡®å®ši
-            string name = name_pos->str();
-            vX::iterator it;
-            for (it = pblm->X.begin(); it != pblm->X.end(); it++)
-                if ((*it).name == name)
-                    break;
-            if (it == pblm->X.end())
-                cout << "var not found, error!" << endl;
-            int index = distance(pblm->X.begin(), it);
-            pblm->C.at(index) += c;  // è€ƒè™‘åˆ°å¯èƒ½æœ‰ x1+x2+x1çš„æƒ…å†µ
-        }
+			// ÕÒµ½¶ÔÓ¦µÄ±äÁ¿²¢ĞŞ¸ÄC[i]£¬¼´È·¶¨i
+			string name = name_pos->str();
+			vX::iterator it;
+			for (it = pblm->X.begin(); it != pblm->X.end(); it++)
+				if ((*it).name == name)
+					break;
+			if (it == pblm->X.end())
+				cout << "var not found, error!" << endl;
+			int index = distance(pblm->X.begin(), it);
+			pblm->C.at(index) += c;  // ¿¼ÂÇµ½¿ÉÄÜÓĞ x1+x2+x1µÄÇé¿ö
+		}
 
-        // åˆ†æç›®æ ‡å‡½æ•°ä¸­å¯èƒ½å­˜åœ¨çš„å¸¸æ•°é¡¹
-        // ç‰¹ç‚¹ä¸ºå‰ç½®ä¸º+æˆ–è€…-æˆ–è€…nullï¼Œåç½®ä¸º+æˆ–è€…-æˆ–è€…null
-        sregex_iterator factor_pos(result.cbegin(), result.cend(), factor);
-        for (sregex_iterator end; factor_pos != end; ++factor_pos) {
-            // å¯»æ‰¾å¹¶è®°å½•å¸¸æ•°é¡¹ofst
-            double ofst = stod(factor_pos->str());
-            string suffix = factor_pos->suffix().str();
-            string prefix = factor_pos->prefix().str();
-            if (suffix.size() != 0 && suffix[0] != '+' && suffix[0] != '-')
-                continue;
-            if (prefix.size() == 0 || prefix.back() == '+')
-                pblm->offset += ofst;
-            else if (prefix.back() == '-')
-                pblm->offset += -ofst;
-        }
-        pblm->OutputTarget();
-    }
+		// ·ÖÎöÄ¿±êº¯ÊıÖĞ¿ÉÄÜ´æÔÚµÄ³£ÊıÏî
+		// ÌØµãÎªÇ°ÖÃÎª+»òÕß-»òÕßnull£¬ºóÖÃÎª+»òÕß-»òÕßnull
+		sregex_iterator factor_pos(result.cbegin(), result.cend(), factor);
+		for (sregex_iterator end; factor_pos != end; ++factor_pos) {
+			// Ñ°ÕÒ²¢¼ÇÂ¼³£ÊıÏîofst
+			double ofst = stod(factor_pos->str());
+			string suffix = factor_pos->suffix().str();
+			string prefix = factor_pos->prefix().str();
+			if (suffix.size() != 0 && suffix[0] != '+' && suffix[0] != '-')
+				continue;
+			if (prefix.size() == 0 || prefix.back() == '+')
+				pblm->offset += ofst;
+			else if (prefix.back() == '-')
+				pblm->offset += -ofst;
+		}
+		pblm->OutputTarget();
+	}
 
-    // è¾“å…¥çº¦æŸæ¡ä»¶
-    {
-        cout << "Step3:è¯·è¾“å…¥çº¦æŸæ¡ä»¶" << endl;
-        cout << "ä¾‹å¦‚x1+x2-3x3<=9,\nx1-2x2+x3=7;" << endl;
-        cout << "çº¦æŸé—´ä»¥\",\"æˆ–æ¢è¡Œè¿›è¡Œåˆ†éš”ï¼Œä»¥\";\"ç»“å°¾" << endl;
+	// ÊäÈëÔ¼ÊøÌõ¼ş
+	{
+		cout << "Step3:ÇëÊäÈëÔ¼ÊøÌõ¼ş" << endl;
+		cout << "ÀıÈçx1+x2-3x3<=9,\nx1-2x2+x3=7;" << endl;
+		cout << "Ô¼Êø¼äÒÔ\",\"»ò»»ĞĞ½øĞĞ·Ö¸ô£¬ÒÔ\";\"½áÎ²" << endl;
 
-        // æ•´ä½“è¾“å…¥
-        string result, line;
-        getline(cin, result, ';');
-        replace(result.begin(), result.end(), '\n', ',');  // æ¢è¡Œè§†ä½œé€—å·
+		// ÕûÌåÊäÈë
+		string result, line;
+		getline(cin, result, ';');
+		replace(result.begin(), result.end(), '\n', ',');  // »»ĞĞÊÓ×÷¶ººÅ
 
-        // æ ¹æ®çº¦æŸæ¡ä»¶æ•°è°ƒæ•´æ•°æ®ç»“æ„
-        int m = 0;
-        stringstream s(result);
-        while (getline(s, line, ','))
-            if (!line.empty())
-                m++;
-        pblm->B.resize(m);
-        for (vP::iterator itp = pblm->P.begin(); itp != pblm->P.end(); ++itp)
-            (*itp).resize(m);
+		// ¸ù¾İÔ¼ÊøÌõ¼şÊıµ÷ÕûÊı¾İ½á¹¹
+		int m = 0;
+		stringstream s(result);
+		while (getline(s, line, ','))
+			if (!line.empty())
+				m++;
+		pblm->B.resize(m);
+		for (vP::iterator itp = pblm->P.begin(); itp != pblm->P.end(); ++itp)
+			(*itp).resize(m);
 
-        // å•å¥è¾“å…¥
-        stringstream ss(result);
-        int line_num = 0;
-        while (getline(ss, line, ',')) {
-            if (line.empty())  // æ¢è¡Œè§†ä½œé€—å·å¯¼è‡´ä¼šæœ‰è¿‡å¤šçš„è¡Œ
-                continue;
-            // cout << "line is " << line << endl;
-            line.erase(remove(line.begin(), line.end(), '*'), line.end());  // åˆ é™¤*
-            line.erase(remove(line.begin(), line.end(), ' '), line.end());  // åˆ é™¤ç©ºæ ¼
+		// µ¥¾äÊäÈë
+		stringstream ss(result);
+		int line_num = 0;
+		while (getline(ss, line, ',')) {
+			if (line.empty())  // »»ĞĞÊÓ×÷¶ººÅµ¼ÖÂ»áÓĞ¹ı¶àµÄĞĞ
+				continue;
+			// cout << "line is " << line << endl;
+			line.erase(remove(line.begin(), line.end(), '*'), line.end());  // É¾³ı*
+			line.erase(remove(line.begin(), line.end(), ' '), line.end());  // É¾³ı¿Õ¸ñ
 
-            // è¯†åˆ«çº¦æŸæ¡ä»¶å³è¾¹é¡¹
-            smatch constraint_matched;
-            regex_search(line, constraint_matched, constraint);
-            string str = constraint_matched.str();
-            tRightSide rhs;
-            if (str[0] == '=')
-                rhs = make_pair(EQUAL, stod(str.substr(1)));
-            else if (str.substr(0, 2) == ">=")
-                rhs = make_pair(LARGE_EQUAL, stod(str.substr(2)));
-            else if (str.substr(0, 2) == "<=")
-                rhs = make_pair(SMALL_EQUAL, stod(str.substr(2)));
-            else
-                cout << "constraint Error! constraint is " << str << endl;
-            pblm->B.at(line_num) = rhs;
+			// Ê¶±ğÔ¼ÊøÌõ¼şÓÒ±ßÏî
+			smatch constraint_matched;
+			regex_search(line, constraint_matched, constraint);
+			string str = constraint_matched.str();
+			tRightSide rhs;
+			if (str[0] == '=')
+				rhs = make_pair(EQUAL, stod(str.substr(1)));
+			else if (str.substr(0, 2) == ">=")
+				rhs = make_pair(LARGE_EQUAL, stod(str.substr(2)));
+			else if (str.substr(0, 2) == "<=")
+				rhs = make_pair(SMALL_EQUAL, stod(str.substr(2)));
+			else
+				cout << "constraint Error! constraint is " << str << endl;
+			pblm->B.at(line_num) = rhs;
 
-            // è¯†åˆ«çº¦æŸæ¡ä»¶å·¦è¾¹é¡¹
-            sregex_iterator name_pos(line.cbegin(), line.cend(), var_name);
-            for (sregex_iterator end; name_pos != end; ++name_pos) {
-                // å‡å®šæ˜¯ç¬¬iå·å˜é‡ï¼Œç¬¬jå·æ–¹ç¨‹
-                // å¯»æ‰¾å¹¶è®°å½•ç³»æ•°P[i][j]
-                double p;  // P[i][j]
-                string prefix = name_pos->prefix().str();
-                size_t last_not_num = prefix.find_last_not_of(".0123456789");
-                if (prefix.size() == 0)
-                    p = 1;  // name + x2 <= 3
-                else if (last_not_num == string::npos)
-                    p = stod(prefix);  // 2name + x2 <=3
-                else if (last_not_num == prefix.size() - 1) {
-                    if (prefix[last_not_num] == '+')  // x1 + name<=4;
-                        p = 1.0;
-                    else if (prefix[last_not_num] == '-')  // x1 - name<=4;
-                        p = -1.0;
-                    else
-                        cout << "Pij Error!" << endl;
-                } else {
-                    if (prefix[last_not_num] == '+' || prefix[last_not_num] == '-')  // x1+ 3name>=2;
-                        p = stod(prefix.substr(last_not_num));                       // åŒ…æ‹¬äº†last_not_num
-                    else
-                        cout << "Pij Error!" << endl;
-                }
+			// Ê¶±ğÔ¼ÊøÌõ¼ş×ó±ßÏî
+			sregex_iterator name_pos(line.cbegin(), line.cend(), var_name);
+			for (sregex_iterator end; name_pos != end; ++name_pos) {
+				// ¼Ù¶¨ÊÇµÚiºÅ±äÁ¿£¬µÚjºÅ·½³Ì
+				// Ñ°ÕÒ²¢¼ÇÂ¼ÏµÊıP[i][j]
+				double p = 0;  // P[i][j]
+				string prefix = name_pos->prefix().str();
+				size_t last_not_num = prefix.find_last_not_of(".0123456789");
+				if (prefix.size() == 0)
+					p = 1;  // name + x2 <= 3
+				else if (last_not_num == string::npos)
+					p = stod(prefix);  // 2name + x2 <=3
+				else if (last_not_num == prefix.size() - 1) {
+					if (prefix[last_not_num] == '+')  // x1 + name<=4;
+						p = 1.0;
+					else if (prefix[last_not_num] == '-')  // x1 - name<=4;
+						p = -1.0;
+					else
+						cout << "Pij Error!" << endl;
+				}
+				else {
+					if (prefix[last_not_num] == '+' || prefix[last_not_num] == '-')  // x1+ 3name>=2;
+						p = stod(prefix.substr(last_not_num));                       // °üÀ¨ÁËlast_not_num
+					else
+						cout << "Pij Error!" << endl;
+				}
 
-                // æ‰¾åˆ°å¯¹åº”çš„å˜é‡å¹¶ä¿®æ”¹P[i][j]ï¼Œå³ç¡®å®ši
-                string name = name_pos->str();
-                vX::iterator itx;
-                for (itx = pblm->X.begin(); itx != pblm->X.end(); itx++)
-                    if ((*itx).name == name)
-                        break;
-                if (itx == pblm->X.end())
-                    cout << "var not found,error!" << endl;
-                int index = distance(pblm->X.begin(), itx);
-                // cout << "index is " << index << ", line_num is " << line_num << endl;
-                pblm->P.at(index).at(line_num) += p;
-            }
-            line_num++;
-        }
-    }
-    return pblm;
+				// ÕÒµ½¶ÔÓ¦µÄ±äÁ¿²¢ĞŞ¸ÄP[i][j]£¬¼´È·¶¨i
+				string name = name_pos->str();
+				vX::iterator itx;
+				for (itx = pblm->X.begin(); itx != pblm->X.end(); itx++)
+					if ((*itx).name == name)
+						break;
+				if (itx == pblm->X.end())
+					cout << "var not found,error!" << endl;
+				int index = distance(pblm->X.begin(), itx);
+				// cout << "index is " << index << ", line_num is " << line_num << endl;
+				pblm->P.at(index).at(line_num) += p;
+			}
+			line_num++;
+		}
+	}
+	return pblm;
 }
 
 void Problem::OutputPblm() {
-    OutputVar();         // è¾“å‡ºå˜é‡åŠèŒƒå›´
-    OutputTarget();      // è¾“å‡ºç›®æ ‡å‡½æ•°
-    OutputConstraint();  // è¾“å‡ºçº¦æŸæ¡ä»¶
+	OutputVar();         // Êä³ö±äÁ¿¼°·¶Î§
+	OutputTarget();      // Êä³öÄ¿±êº¯Êı
+	OutputConstraint();  // Êä³öÔ¼ÊøÌõ¼ş
 }
 
 void Problem::OutputVar() {
-    for (vX::const_iterator itx = X.cbegin(); itx != X.cend(); ++itx) {
-        cout << (*itx).name;
-        switch ((*itx).rhs.first) {
-            case UNLIMITED:
-                cout << " is unlimited" << endl;
-                break;
-            case LARGE_EQUAL:
-                cout << ">=" << (*itx).rhs.second << endl;
-                break;
-            case SMALL_EQUAL:
-                cout << "<=" << (*itx).rhs.second << endl;
-                break;
-            case EQUAL:
-                cout << "=" << (*itx).rhs.second << endl;
-                break;
-            default:
-                cout << "output Error!" << endl;
-                break;
-        }
-    }
-    cout << "å…±" << X.size() << "ä¸ªå˜é‡" << endl;
+	for (vX::const_iterator itx = X.cbegin(); itx != X.cend(); ++itx) {
+		cout << (*itx).name;
+		switch ((*itx).rhs.first) {
+		case UNLIMITED:
+			cout << " is unlimited" << endl;
+			break;
+		case LARGE_EQUAL:
+			cout << ">=" << (*itx).rhs.second << endl;
+			break;
+		case SMALL_EQUAL:
+			cout << "<=" << (*itx).rhs.second << endl;
+			break;
+		case EQUAL:
+			cout << "=" << (*itx).rhs.second << endl;
+			break;
+		default:
+			cout << "output Error!" << endl;
+			break;
+		}
+	}
+	cout << "¹²" << X.size() << "¸ö±äÁ¿" << endl;
 }
 
 void Problem::OutputTarget() {
-    if (maxOrMin == Max)
-        cout << "max " << flush;
-    else if (maxOrMin == Min)
-        cout << "min " << flush;
-    vValue::const_iterator itc = C.cbegin();
-    vX::const_iterator itx = X.cbegin();
-    for (; itc != C.cend() && itx != X.cend(); ++itc, ++itx) {
-        if (!*itc)
-            continue;
-        if (itc != C.cbegin())
-            cout << " ";
-        if (*itc > 0 && itc != C.cbegin())
-            cout << "+";
-        cout << *itc << "*" << (*itx).name;
-    }
-    if (offset) {
-        cout << " ";
-        if (offset > 0)
-            cout << "+";
-        cout << offset;
-    }
-    cout << endl;
+	if (maxOrMin == Max)
+		cout << "max " << flush;
+	else if (maxOrMin == Min)
+		cout << "min " << flush;
+	vValue::const_iterator itc = C.cbegin();
+	vX::const_iterator itx = X.cbegin();
+	for (; itc != C.cend() && itx != X.cend(); ++itc, ++itx) {
+		if (!*itc)
+			continue;
+		if (itc != C.cbegin())
+			cout << " ";
+		if (*itc > 0 && itc != C.cbegin())
+			cout << "+";
+		cout << *itc << "*" << (*itx).name;
+	}
+	if (offset) {
+		cout << " ";
+		if (offset > 0)
+			cout << "+";
+		cout << offset;
+	}
+	cout << endl;
 }
 
 void Problem::OutputConstraint() {
-    for (vB::const_iterator itb = B.cbegin(); itb != B.cend(); ++itb) {  // æŒ‰çº¦æŸéå†
-        int index = distance(B.cbegin(), itb);
-        int Psz = P.size();
-        for (int i = 0; i < Psz; ++i) {
-            if (!P.at(i).at(index))
-                continue;
-            if (i)
-                cout << " ";
-            if (P.at(i).at(index) > 0 && i)
-                cout << "+";
-            cout << P.at(i).at(index) << "*" << X.at(i).name;
-        }
-        switch ((*itb).first) {
-            case UNLIMITED:
-                cout << "constraint Error!" << endl;
-                break;
-            case LARGE_EQUAL:
-                cout << " >= " << (*itb).second << endl;
-                break;
-            case SMALL_EQUAL:
-                cout << " <= " << (*itb).second << endl;
-                break;
-            case EQUAL:
-                cout << " = " << (*itb).second << endl;
-                break;
-            default:
-                cout << "output Error!" << endl;
-                break;
-        }
-    }
-    cout << "å…±" << B.size() << "ä¸ªçº¦æŸæ¡ä»¶" << endl;
+	for (vB::const_iterator itb = B.cbegin(); itb != B.cend(); ++itb) {  // °´Ô¼Êø±éÀú
+		int index = distance(B.cbegin(), itb);
+		int Psz = P.size();
+		for (int i = 0; i < Psz; ++i) {
+			if (!P.at(i).at(index))
+				continue;
+			if (i)
+				cout << " ";
+			if (P.at(i).at(index) > 0 && i)
+				cout << "+";
+			cout << P.at(i).at(index) << "*" << X.at(i).name;
+		}
+		switch ((*itb).first) {
+		case UNLIMITED:
+			cout << "constraint Error!" << endl;
+			break;
+		case LARGE_EQUAL:
+			cout << " >= " << (*itb).second << endl;
+			break;
+		case SMALL_EQUAL:
+			cout << " <= " << (*itb).second << endl;
+			break;
+		case EQUAL:
+			cout << " = " << (*itb).second << endl;
+			break;
+		default:
+			cout << "output Error!" << endl;
+			break;
+		}
+	}
+	cout << "¹²" << B.size() << "¸öÔ¼ÊøÌõ¼ş" << endl;
 }
 
 Problem* Problem::Dualize() {
-    int m = B.size(), n = X.size();
-    Problem* dual = new Problem();
+	int m = B.size(), n = X.size();
+	Problem* dual = new Problem();
 
-    // P è½¬ç½®
-    dual->P.resize(m);
-    for (vP::const_iterator itp_out = P.cbegin(); itp_out != P.cend(); ++itp_out) {
-        vValue::const_iterator itp_in = (*itp_out).cbegin();
-        for (int index = 0; itp_in != (*itp_out).cend(); ++itp_in, ++index)
-            dual->P.at(index).push_back(*itp_in);
-    }
+	// P ×ªÖÃ
+	dual->P.resize(m);
+	for (vP::const_iterator itp_out = P.cbegin(); itp_out != P.cend(); ++itp_out) {
+		vValue::const_iterator itp_in = (*itp_out).cbegin();
+		for (int index = 0; itp_in != (*itp_out).cend(); ++itp_in, ++index)
+			dual->P.at(index).push_back(*itp_in);
+	}
 
-    // çº¦æŸæ¡ä»¶å³è¾¹é¡¹æ•°å€¼å†³å®šç›®æ ‡å‡½æ•°ç³»æ•°
-    // çº¦æŸæ¡ä»¶ä¸ç­‰å·å†³å®šå˜é‡å–å€¼èŒƒå›´(Maxç›¸åï¼ŒMinç›¸åŒ)
-    vB::const_iterator itb = B.cbegin();
-    for (int index = 0; itb != B.cend(); ++itb, ++index) {
-        Range range;
-        if ((*itb).first == EQUAL)
-            range = UNLIMITED;
-        else if ((*itb).first == SMALL_EQUAL) {
-            if (maxOrMin == Max)
-                range = LARGE_EQUAL;
-            else if (maxOrMin == Min)
-                range = SMALL_EQUAL;
-        } else if ((*itb).first == LARGE_EQUAL) {
-            if (maxOrMin == Max)
-                range = SMALL_EQUAL;
-            else if (maxOrMin == Min)
-                range = LARGE_EQUAL;
-        } else
-            cout << "Range Error!" << endl;
-        tRightSide rhs(range, 0);
-        tVar var("line" + to_string(index), rhs, 0.0);
-        dual->X.push_back(var);
-        dual->C.push_back((*itb).second);
-    }
+	// Ô¼ÊøÌõ¼şÓÒ±ßÏîÊıÖµ¾ö¶¨Ä¿±êº¯ÊıÏµÊı
+	// Ô¼ÊøÌõ¼ş²»µÈºÅ¾ö¶¨±äÁ¿È¡Öµ·¶Î§(MaxÏà·´£¬MinÏàÍ¬)
+	vB::const_iterator itb = B.cbegin();
+	for (int index = 0; itb != B.cend(); ++itb, ++index) {
+		Range range;
+		if ((*itb).first == EQUAL)
+			range = UNLIMITED;
+		else if ((*itb).first == SMALL_EQUAL) {
+			if (maxOrMin == Max)
+				range = LARGE_EQUAL;
+			else if (maxOrMin == Min)
+				range = SMALL_EQUAL;
+		}
+		else if ((*itb).first == LARGE_EQUAL) {
+			if (maxOrMin == Max)
+				range = SMALL_EQUAL;
+			else if (maxOrMin == Min)
+				range = LARGE_EQUAL;
+		}
+		else
+			cout << "Range Error!" << endl;
+		tRightSide rhs(range, 0);
+		tVar var("line" + to_string(index), rhs, 0.0);
+		dual->X.push_back(var);
+		dual->C.push_back((*itb).second);
+	}
 
-    // ç›®æ ‡å‡½æ•°ç³»æ•°å†³å®šçº¦æŸæ¡ä»¶å³è¾¹é¡¹æ•°å€¼
-    // å˜é‡å–å€¼èŒƒå›´å†³å®šçº¦æŸæ¡ä»¶ä¸ç­‰å·(Maxç›¸åŒï¼ŒMinç›¸å)
-    vValue::const_iterator itc = C.cbegin();
-    vX::const_iterator itx = X.cbegin();
-    for (; itc != C.cend() && itx != X.cend(); ++itc, ++itx) {
-        Range range;
-        if ((*itx).rhs.first == UNLIMITED)
-            range = EQUAL;
-        else if ((*itx).rhs.first == SMALL_EQUAL) {
-            if (maxOrMin == Max)
-                range = SMALL_EQUAL;
-            else if (maxOrMin == Min)
-                range = LARGE_EQUAL;
-        } else if ((*itx).rhs.first == LARGE_EQUAL) {
-            if (maxOrMin == Max)
-                range = LARGE_EQUAL;
-            else if (maxOrMin == Min)
-                range = SMALL_EQUAL;
-        } else
-            cout << "Range Error!" << endl;
-        tRightSide rhs(range, *itc);
-        dual->B.push_back(rhs);
-    }
+	// Ä¿±êº¯ÊıÏµÊı¾ö¶¨Ô¼ÊøÌõ¼şÓÒ±ßÏîÊıÖµ
+	// ±äÁ¿È¡Öµ·¶Î§¾ö¶¨Ô¼ÊøÌõ¼ş²»µÈºÅ(MaxÏàÍ¬£¬MinÏà·´)
+	vValue::const_iterator itc = C.cbegin();
+	vX::const_iterator itx = X.cbegin();
+	for (; itc != C.cend() && itx != X.cend(); ++itc, ++itx) {
+		Range range;
+		if ((*itx).rhs.first == UNLIMITED)
+			range = EQUAL;
+		else if ((*itx).rhs.first == SMALL_EQUAL) {
+			if (maxOrMin == Max)
+				range = SMALL_EQUAL;
+			else if (maxOrMin == Min)
+				range = LARGE_EQUAL;
+		}
+		else if ((*itx).rhs.first == LARGE_EQUAL) {
+			if (maxOrMin == Max)
+				range = LARGE_EQUAL;
+			else if (maxOrMin == Min)
+				range = SMALL_EQUAL;
+		}
+		else
+			cout << "Range Error!" << endl;
+		tRightSide rhs(range, *itc);
+		dual->B.push_back(rhs);
+	}
 
-    // å˜é‡å–å€¼èŒƒå›´å†³å®šçº¦æŸæ¡ä»¶å³è¾¹é¡¹æ•°å€¼
-    dual->offset = offset;
-    for (vX::const_iterator itx = X.cbegin(); itx != X.cend(); ++itx) {
-        if (equals(0.0, (*itx).rhs.second))
-            continue;
-        int index = distance(X.cbegin(), itx);
-        vValue::iterator itc_ = dual->C.begin();
-        for (int i = 0; itc_ != dual->C.end(); ++itc_, ++i)
-            (*itc_) -= (*itx).rhs.second * P.at(index).at(i);
-        dual->offset += (*itx).rhs.second * C.at(index);  // å¯¹å¶é—®é¢˜éœ€è¦å–å
-    }
+	// ±äÁ¿È¡Öµ·¶Î§¾ö¶¨Ô¼ÊøÌõ¼şÓÒ±ßÏîÊıÖµ
+	dual->offset = offset;
+	for (vX::const_iterator itx = X.cbegin(); itx != X.cend(); ++itx) {
+		if (equals(0.0, (*itx).rhs.second))
+			continue;
+		int index = distance(X.cbegin(), itx);
+		vValue::iterator itc_ = dual->C.begin();
+		for (int i = 0; itc_ != dual->C.end(); ++itc_, ++i)
+			(*itc_) -= (*itx).rhs.second * P.at(index).at(i);
+		dual->offset += (*itx).rhs.second * C.at(index);  // ¶ÔÅ¼ÎÊÌâĞèÒªÈ¡·´
+	}
 
-    // ç›®æ ‡å‡½æ•°å˜åŒ–
-    if (maxOrMin == Max)
-        dual->maxOrMin = Min;
-    else
-        dual->maxOrMin = Max;
-    return dual;
+	// Ä¿±êº¯Êı±ä»¯
+	if (maxOrMin == Max)
+		dual->maxOrMin = Min;
+	else
+		dual->maxOrMin = Max;
+	return dual;
 }
 
 Problem* Problem::Standardlize(Range range_b) {
-    // ç”Ÿæˆä¸€ä¸ªæ ‡å‡†å‹
-    cout << "æ ‡å‡†åŒ–ï¼" << endl;
-    Problem* pblm = new Problem(*this);
+	// Éú³ÉÒ»¸ö±ê×¼ĞÍ
+	cout << "±ê×¼»¯£¡" << endl;
+	Problem* pblm = new Problem(*this);
 
-    // å˜ä¸ºæ±‚ç›®æ ‡å‡½æ•°æœ€å¤§åŒ–
-    if (maxOrMin == Min) {
-        for (vValue::iterator itc = pblm->C.begin(); itc != pblm->C.end(); itc++)
-            *itc = -*itc;
-        pblm->maxOrMin = Max;
-        pblm->offset = -pblm->offset;
-    }
+	// ±äÎªÇóÄ¿±êº¯Êı×î´ó»¯
+	if (maxOrMin == Min) {
+		for (vValue::iterator itc = pblm->C.begin(); itc != pblm->C.end(); itc++)
+			*itc = -*itc;
+		pblm->maxOrMin = Max;
+		pblm->offset = -pblm->offset;
+	}
 
-    // ä¿®æ­£å˜é‡å–å€¼èŒƒå›´
-    for (vX::iterator itx = pblm->X.begin(); itx != pblm->X.end(); ++itx) {
-        double bound = (*itx).rhs.second;
-        string bound_str = to_string(bound);
-        // if (equals(bound, floor(bound)))  // bound = 3.0001 / -2.9999
-        //     bound_str = to_string(int(bound));
-        // else if (equals(bound, floor(bound) + 1))  // bound = 2.9999 / -3.0001
-        //     bound_str = to_string(int(bound) + 1);
-        if (IsInt(bound))
-            bound_str = to_string(SimplifyToInt(bound));
-        regex_replace(bound_str, std::regex("\\."), "dot");
-        int index = distance(pblm->X.begin(), itx);
-        if ((*itx).rhs.first == EQUAL)
-            continue;
+	// ĞŞÕı±äÁ¿È¡Öµ·¶Î§
+	for (vX::iterator itx = pblm->X.begin(); itx != pblm->X.end(); ++itx) {
+		double bound = (*itx).rhs.second;
+		string bound_str = to_string(bound);
+		// if (equals(bound, floor(bound)))  // bound = 3.0001 / -2.9999
+		//     bound_str = to_string(int(bound));
+		// else if (equals(bound, floor(bound) + 1))  // bound = 2.9999 / -3.0001
+		//     bound_str = to_string(int(bound) + 1);
+		if (IsInt(bound))
+			bound_str = to_string(SimplifyToInt(bound));
+		regex_replace(bound_str, std::regex("\\."), "dot");
+		int index = distance(pblm->X.begin(), itx);
+		if ((*itx).rhs.first == EQUAL)
+			continue;
 
-        // x>=a,x'=x-a,x=x'+a
-        else if ((*itx).rhs.first == LARGE_EQUAL) {
-            if (equals(bound, 0))
-                continue;
-            cout << index << "å·å˜é‡å¤§äºç­‰äº" << bound << "éœ€è¦ä¿®æ­£" << endl;
-            (*itx).name = "__" + (*itx).name + "_minus_" + bound_str + "__";  // x'=x-a,x=x'+a
-            pblm->offset += bound * pblm->C.at(index);
-            vValue::iterator itp_in = pblm->P.at(index).begin();
-            vB::iterator itb = pblm->B.begin();
-            for (; itp_in != pblm->P.at(index).end() && itb != pblm->B.end(); ++itp_in, ++itb)
-                (*itb).second -= bound * (*itp_in);
-            (*itx).rhs = make_pair(LARGE_EQUAL, 0);
-        }
+		// x>=a,x'=x-a,x=x'+a
+		else if ((*itx).rhs.first == LARGE_EQUAL) {
+			if (equals(bound, 0))
+				continue;
+			cout << index << "ºÅ±äÁ¿´óÓÚµÈÓÚ" << bound << "ĞèÒªĞŞÕı" << endl;
+			(*itx).name = "__" + (*itx).name + "_minus_" + bound_str + "__";  // x'=x-a,x=x'+a
+			pblm->offset += bound * pblm->C.at(index);
+			vValue::iterator itp_in = pblm->P.at(index).begin();
+			vB::iterator itb = pblm->B.begin();
+			for (; itp_in != pblm->P.at(index).end() && itb != pblm->B.end(); ++itp_in, ++itb)
+				(*itb).second -= bound * (*itp_in);
+			(*itx).rhs = make_pair(LARGE_EQUAL, 0);
+		}
 
-        // x<=a,x'=-x+a,x=-x'+a
-        else if ((*itx).rhs.first == SMALL_EQUAL) {
-            cout << index << "å·å˜é‡å°äºç­‰äº" << bound << "éœ€è¦ä¿®æ­£" << endl;
-            (*itx).name = "__minus_" + (*itx).name + "_plus_" + bound_str + "__";  // x'=-x+a,x=-x'+a
-            pblm->offset += bound * pblm->C.at(index);
-            pblm->C.at(index) = -pblm->C.at(index);  // Ciå–è´Ÿ
-            vValue::iterator itp_in = pblm->P.at(index).begin();
-            vB::iterator itb = pblm->B.begin();
-            for (; itp_in != pblm->P.at(index).end() && itb != pblm->B.end(); ++itp_in, ++itb) {
-                (*itb).second -= bound * (*itp_in);
-                (*itp_in) = -(*itp_in);  // Piå…¨éƒ¨å–è´Ÿ
-            }
-            (*itx).rhs = make_pair(LARGE_EQUAL, 0);
-        }
+		// x<=a,x'=-x+a,x=-x'+a
+		else if ((*itx).rhs.first == SMALL_EQUAL) {
+			cout << index << "ºÅ±äÁ¿Ğ¡ÓÚµÈÓÚ" << bound << "ĞèÒªĞŞÕı" << endl;
+			(*itx).name = "__minus_" + (*itx).name + "_plus_" + bound_str + "__";  // x'=-x+a,x=-x'+a
+			pblm->offset += bound * pblm->C.at(index);
+			pblm->C.at(index) = -pblm->C.at(index);  // CiÈ¡¸º
+			vValue::iterator itp_in = pblm->P.at(index).begin();
+			vB::iterator itb = pblm->B.begin();
+			for (; itp_in != pblm->P.at(index).end() && itb != pblm->B.end(); ++itp_in, ++itb) {
+				(*itb).second -= bound * (*itp_in);
+				(*itp_in) = -(*itp_in);  // PiÈ«²¿È¡¸º
+			}
+			(*itx).rhs = make_pair(LARGE_EQUAL, 0);
+		}
 
-        // x unlimited,x = x_1-x_2
-        else if ((*itx).rhs.first == UNLIMITED) {
-            cout << index << "å·å˜é‡å–å€¼èŒƒå›´æ— é™åˆ¶ï¼Œéœ€è¦ä¿®æ­£" << endl;
-            string name = (*itx).name;
-            (*itx).rhs = make_pair(LARGE_EQUAL, 0);
-            (*itx).name = "__" + name + "_part1__";
-            tRightSide rhs(LARGE_EQUAL, 0);
-            tVar var("__" + name + "_part2__", rhs, 0.0);
-            itx = pblm->X.emplace(itx + 1, var);                               // è¿­ä»£å™¨å¯èƒ½å¤±æ•ˆï¼Œéœ€è¦é‡æ–°è·å–
-            pblm->C.emplace(pblm->C.begin() + index + 1, -pblm->C.at(index));  // Ci' = -Ci
-            pblm->P.emplace(pblm->P.begin() + index + 1, pblm->P.at(index));   // Pi' = Pi
-            vValue::iterator itp_in = pblm->P.at(index + 1).begin();
-            for (; itp_in != pblm->P.at(index + 1).end(); ++itp_in)
-                (*itp_in) = -(*itp_in);  // Pi' = -Pi' = -Pi
-        } else
-            cout << "Error" << (*itx).rhs.first << endl;
-    }
+		// x unlimited,x = x_1-x_2
+		else if ((*itx).rhs.first == UNLIMITED) {
+			cout << index << "ºÅ±äÁ¿È¡Öµ·¶Î§ÎŞÏŞÖÆ£¬ĞèÒªĞŞÕı" << endl;
+			string name = (*itx).name;
+			(*itx).rhs = make_pair(LARGE_EQUAL, 0);
+			(*itx).name = "__" + name + "_part1__";
+			tRightSide rhs(LARGE_EQUAL, 0);
+			tVar var("__" + name + "_part2__", rhs, 0.0);
+			itx = pblm->X.emplace(itx + 1, var);                               // µü´úÆ÷¿ÉÄÜÊ§Ğ§£¬ĞèÒªÖØĞÂ»ñÈ¡
+			pblm->C.emplace(pblm->C.begin() + index + 1, -pblm->C.at(index));  // Ci' = -Ci
+			pblm->P.emplace(pblm->P.begin() + index + 1, pblm->P.at(index));   // Pi' = Pi
+			vValue::iterator itp_in = pblm->P.at(index + 1).begin();
+			for (; itp_in != pblm->P.at(index + 1).end(); ++itp_in)
+				(*itp_in) = -(*itp_in);  // Pi' = -Pi' = -Pi
+		}
+		else
+			cout << "Error" << (*itx).rhs.first << endl;
+	}
 
-    // ä¿è¯çº¦æŸæ¡ä»¶å‡ä¸ºç­‰äºæŸéè´Ÿå€¼
-    for (vB::iterator itb = pblm->B.begin(); itb != pblm->B.end(); itb++) {
-        int index = distance(pblm->B.begin(), itb);
+	// ±£Ö¤Ô¼ÊøÌõ¼ş¾ùÎªµÈÓÚÄ³·Ç¸ºÖµ
+	for (vB::iterator itb = pblm->B.begin(); itb != pblm->B.end(); itb++) {
+		int index = distance(pblm->B.begin(), itb);
 
-        if (range_b == LARGE_EQUAL) {  // ä¿æŒBçš„éè´Ÿæ€§
-            if ((*itb).second < 0) {
-                (*itb).second = -(*itb).second;
-                if ((*itb).first == LARGE_EQUAL)
-                    (*itb).second = SMALL_EQUAL;
-                else if ((*itb).second == SMALL_EQUAL)
-                    (*itb).first = LARGE_EQUAL;
-                int Psz = pblm->P.size();
-                for (int i = 0; i < Psz; ++i)
-                    pblm->P.at(i).at(index) = -pblm->P.at(i).at(index);
-            }
-        }
+		if (range_b == LARGE_EQUAL) {  // ±£³ÖBµÄ·Ç¸ºĞÔ
+			if ((*itb).second < 0) {
+				(*itb).second = -(*itb).second;
+				if ((*itb).first == LARGE_EQUAL)
+					(*itb).second = SMALL_EQUAL;
+				else if ((*itb).second == SMALL_EQUAL)
+					(*itb).first = LARGE_EQUAL;
+				int Psz = pblm->P.size();
+				for (int i = 0; i < Psz; ++i)
+					pblm->P.at(i).at(index) = -pblm->P.at(i).at(index);
+			}
+		}
 
-        // å¼•å…¥å‰©ä½™å˜é‡remain variable
-        if ((*itb).first == LARGE_EQUAL) {
-            tRightSide rhs(LARGE_EQUAL, 0);
-            tVar var("__remain_" + to_string(index) + "__", rhs, 0.0);
-            pblm->X.push_back(var);
-            pblm->C.push_back(0.0);
-            pblm->P.push_back(vector(pblm->B.size(), 0.0));
-            pblm->P.back().at(index) = -1;
-            (*itb).first = EQUAL;
-        }
-        // å¼•å…¥æ¾å¼›å˜é‡flabby variable
-        else if ((*itb).first == SMALL_EQUAL) {
-            tRightSide rhs(LARGE_EQUAL, 0);
-            tVar var("__flabby_" + to_string(index) + "__", rhs, 0.0);
-            pblm->X.push_back(var);
-            pblm->C.push_back(0.0);
-            pblm->P.push_back(vector(pblm->B.size(), 0.0));
-            pblm->P.back().at(index) = 1;
-            (*itb).first = EQUAL;
-        }
-    }
+		// ÒıÈëÊ£Óà±äÁ¿remain variable
+		if ((*itb).first == LARGE_EQUAL) {
+			tRightSide rhs(LARGE_EQUAL, 0);
+			tVar var("__remain_" + to_string(index) + "__", rhs, 0.0);
+			pblm->X.push_back(var);
+			pblm->C.push_back(0.0);
+			pblm->P.push_back(vector<double>(pblm->B.size(), 0.0));
+			pblm->P.back().at(index) = -1;
+			(*itb).first = EQUAL;
+		}
+		// ÒıÈëËÉ³Ú±äÁ¿flabby variable
+		else if ((*itb).first == SMALL_EQUAL) {
+			tRightSide rhs(LARGE_EQUAL, 0);
+			tVar var("__flabby_" + to_string(index) + "__", rhs, 0.0);
+			pblm->X.push_back(var);
+			pblm->C.push_back(0.0);
+			pblm->P.push_back(vector<double>(pblm->B.size(), 0.0));
+			pblm->P.back().at(index) = 1;
+			(*itb).first = EQUAL;
+		}
+	}
 
-    return pblm;
+	return pblm;
 }
 
 bool Problem::IsStandard() {
-    // æ£€éªŒå¯¹è±¡æ˜¯å¦å·²æ ‡å‡†åŒ–
+	// ¼ìÑé¶ÔÏóÊÇ·ñÒÑ±ê×¼»¯
 
-    // ç›®æ ‡å‡½æ•°å–æœ€å¤§åŒ–
-    if (maxOrMin != Max)
-        return 0;
+	// Ä¿±êº¯ÊıÈ¡×î´ó»¯
+	if (maxOrMin != Max)
+		return 0;
 
-    // æ‰€æœ‰å˜é‡å–å€¼éƒ½ä¸ºéè´Ÿ
-    for (vX::const_iterator itx = X.cbegin(); itx != X.cend(); ++itx)
-        if ((*itx).rhs.first != LARGE_EQUAL || !equals((*itx).rhs.second, 0))
-            return 0;
+	// ËùÓĞ±äÁ¿È¡Öµ¶¼Îª·Ç¸º
+	for (vX::const_iterator itx = X.cbegin(); itx != X.cend(); ++itx)
+		if ((*itx).rhs.first != LARGE_EQUAL || !equals((*itx).rhs.second, 0))
+			return 0;
 
-    // æ‰€æœ‰çº¦æŸéƒ½ä¸ºç­‰äºæŸéè´Ÿå€¼
-    for (vB::const_iterator itb = B.cbegin(); itb != B.cend(); ++itb)
-        if ((*itb).first != EQUAL || (*itb).second < 0)
-            return 0;
+	// ËùÓĞÔ¼Êø¶¼ÎªµÈÓÚÄ³·Ç¸ºÖµ
+	for (vB::const_iterator itb = B.cbegin(); itb != B.cend(); ++itb)
+		if ((*itb).first != EQUAL || (*itb).second < 0)
+			return 0;
 
-    // cout << "Problem is Standard!" << endl;
-    return 1;
+	// cout << "Problem is Standard!" << endl;
+	return 1;
 }
 
 Range Problem::RangeB() {
-    // æ£€æŸ¥Bçš„å€¼æ˜¯å¦ä¸ºå…¨éè´Ÿ/å…¨éæ­£/
-    int positive = 0, negative = 0, zero = 0;
-    for (vB::const_iterator itb = B.cbegin(); itb != B.cend(); ++itb) {
-        if (equals(0, (*itb).second)) {
-            zero++;
-            continue;
-        } else if ((*itb).second > 0)
-            positive++;
-        else if ((*itb).second < 0)
-            negative++;
-        else
-            cout << "Error in RangeB" << endl;
-    }
-    if (!positive && !negative)  // Bå…¨0
-        return EQUAL;
-    if (positive && !negative)  // Béè´Ÿ
-        return LARGE_EQUAL;
-    if (!positive && negative)  // Béæ­£
-        return SMALL_EQUAL;
-    return UNLIMITED;  // Bæœ‰æ­£æœ‰è´Ÿ
+	// ¼ì²éBµÄÖµÊÇ·ñÎªÈ«·Ç¸º/È«·ÇÕı/
+	int positive = 0, negative = 0, zero = 0;
+	for (vB::const_iterator itb = B.cbegin(); itb != B.cend(); ++itb) {
+		if (equals(0, (*itb).second)) {
+			zero++;
+			continue;
+		}
+		else if ((*itb).second > 0)
+			positive++;
+		else if ((*itb).second < 0)
+			negative++;
+		else
+			cout << "Error in RangeB" << endl;
+	}
+	if (!positive && !negative)  // BÈ«0
+		return EQUAL;
+	if (positive && !negative)  // B·Ç¸º
+		return LARGE_EQUAL;
+	if (!positive && negative)  // B·ÇÕı
+		return SMALL_EQUAL;
+	return UNLIMITED;  // BÓĞÕıÓĞ¸º
 }
 
 Range Problem::RangeC() {
-    // æ£€æŸ¥Cçš„å€¼æ˜¯å¦ä¸ºå…¨éè´Ÿ/å…¨éæ­£/
-    int positive = 0, negative = 0, zero = 0;
-    for (vValue::const_iterator itc = C.cbegin(); itc != C.cend(); ++itc) {
-        if (equals(0, *itc)) {
-            zero++;
-            continue;
-        } else if (*itc > 0)
-            positive++;
-        else if (*itc < 0)
-            negative++;
-        else
-            cout << "Error in RangeC" << endl;
-    }
-    if (!positive && !negative)  // Cå…¨0
-        return EQUAL;
-    if (positive && !negative)  // Céè´Ÿ
-        return LARGE_EQUAL;
-    if (!positive && negative)  // Céæ­£
-        return SMALL_EQUAL;
-    return UNLIMITED;  // Cæœ‰æ­£æœ‰è´Ÿ
+	// ¼ì²éCµÄÖµÊÇ·ñÎªÈ«·Ç¸º/È«·ÇÕı/
+	int positive = 0, negative = 0, zero = 0;
+	for (vValue::const_iterator itc = C.cbegin(); itc != C.cend(); ++itc) {
+		if (equals(0, *itc)) {
+			zero++;
+			continue;
+		}
+		else if (*itc > 0)
+			positive++;
+		else if (*itc < 0)
+			negative++;
+		else
+			cout << "Error in RangeC" << endl;
+	}
+	if (!positive && !negative)  // CÈ«0
+		return EQUAL;
+	if (positive && !negative)  // C·Ç¸º
+		return LARGE_EQUAL;
+	if (!positive && negative)  // C·ÇÕı
+		return SMALL_EQUAL;
+	return UNLIMITED;  // CÓĞÕıÓĞ¸º
 }
 
 void Problem::ChangeB(Range range) {
-    if (range == LARGE_EQUAL)
-        for (vB::iterator itb = B.begin(); itb != B.end(); itb++) {
-            int index = distance(B.begin(), itb);
-            // ä¿æŒBçš„éè´Ÿæ€§
-            if ((*itb).second < 0) {
-                (*itb).second = -(*itb).second;
-                if ((*itb).first == LARGE_EQUAL)
-                    (*itb).second = SMALL_EQUAL;
-                else if ((*itb).second == SMALL_EQUAL)
-                    (*itb).first = LARGE_EQUAL;
-                int Psz = P.size();
-                for (int i = 0; i < Psz; ++i)
-                    P.at(i).at(index) = -P.at(i).at(index);
-            }
-        }
-    if (range == SMALL_EQUAL)
-        for (vB::iterator itb = B.begin(); itb != B.end(); itb++) {
-            int index = distance(B.begin(), itb);
-            // ä¿æŒBçš„éæ­£æ€§
-            if ((*itb).second > 0) {
-                (*itb).second = -(*itb).second;
-                if ((*itb).first == LARGE_EQUAL)
-                    (*itb).second = SMALL_EQUAL;
-                else if ((*itb).second == SMALL_EQUAL)
-                    (*itb).first = LARGE_EQUAL;
-                int Psz = P.size();
-                for (int i = 0; i < Psz; ++i)
-                    P.at(i).at(index) = -P.at(i).at(index);
-            }
-        }
-    if (range == EQUAL || range == UNLIMITED) {
-        cout << "not finished" << endl;
-    }
+	if (range == LARGE_EQUAL)
+		for (vB::iterator itb = B.begin(); itb != B.end(); itb++) {
+			int index = distance(B.begin(), itb);
+			// ±£³ÖBµÄ·Ç¸ºĞÔ
+			if ((*itb).second < 0) {
+				(*itb).second = -(*itb).second;
+				if ((*itb).first == LARGE_EQUAL)
+					(*itb).second = SMALL_EQUAL;
+				else if ((*itb).second == SMALL_EQUAL)
+					(*itb).first = LARGE_EQUAL;
+				int Psz = P.size();
+				for (int i = 0; i < Psz; ++i)
+					P.at(i).at(index) = -P.at(i).at(index);
+			}
+		}
+	if (range == SMALL_EQUAL)
+		for (vB::iterator itb = B.begin(); itb != B.end(); itb++) {
+			int index = distance(B.begin(), itb);
+			// ±£³ÖBµÄ·ÇÕıĞÔ
+			if ((*itb).second > 0) {
+				(*itb).second = -(*itb).second;
+				if ((*itb).first == LARGE_EQUAL)
+					(*itb).second = SMALL_EQUAL;
+				else if ((*itb).second == SMALL_EQUAL)
+					(*itb).first = LARGE_EQUAL;
+				int Psz = P.size();
+				for (int i = 0; i < Psz; ++i)
+					P.at(i).at(index) = -P.at(i).at(index);
+			}
+		}
+	if (range == EQUAL || range == UNLIMITED) {
+		cout << "not finished" << endl;
+	}
 }
 
 tResult* Problem::GetResult() {
-    tResult* rst = new tResult();
-    for (vX::const_iterator itx = X.cbegin(); itx != X.cend(); ++itx) {
-        int index = distance(X.cbegin(), itx);
-        rst->first += (*itx).value * C.at(index);
-    }
-    rst->first += offset;
-    if(IsInt(rst->first))
-        rst->first = SimplifyToInt(rst->first);
-    rst->second.clear();
-    for (vX::const_iterator itx = X.cbegin(); itx != X.cend(); ++itx)
-        rst->second.push_back((*itx).value);
-    return rst;
+	tResult* rst = new tResult();
+	for (vX::const_iterator itx = X.cbegin(); itx != X.cend(); ++itx) {
+		int index = distance(X.cbegin(), itx);
+		rst->first += (*itx).value * C.at(index);
+	}
+	rst->first += offset;
+	if (IsInt(rst->first))
+		rst->first = SimplifyToInt(rst->first);
+	rst->second.clear();
+	for (vX::const_iterator itx = X.cbegin(); itx != X.cend(); ++itx)
+		rst->second.push_back((*itx).value);
+	return rst;
 }
 
 void Problem::OutputResult() {
-    if (result == NO_SOLUTION) {
-        cout << "è¯¥é—®é¢˜æ— å¯è¡Œè§£" << endl;
-        return;
-    } else if (result == UNBOUNDED) {
-        cout << "è¯¥é—®é¢˜æ— æœ‰ç•Œæœ€ä¼˜è§£" << endl;
-        return;
-    }
-    double target_value = 0;
-    for (vX::const_iterator itx = X.cbegin(); itx != X.cend(); ++itx) {
-        int index = distance(X.cbegin(), itx);
-        target_value += (*itx).value * C.at(index);
-    }
-    target_value += offset;
-    if (IsInt(target_value))
-        target_value = SimplifyToInt(target_value);
-    cout << "target value is " << target_value;
-    cout << ", get at (";
-    for (vX::const_iterator itx = X.cbegin();;) {
-        cout << (*itx).name << "=" << (*itx).value;
-        if (++itx != X.cend())  // æ­¤å¤„åˆ¤æ–­å¾ªç¯æ˜¯å¦ç»“æŸ
-            cout << ", ";
-        else
-            break;
-    }
-    cout << ")" << endl;
+	if (result == NO_SOLUTION) {
+		cout << "¸ÃÎÊÌâÎŞ¿ÉĞĞ½â" << endl;
+		return;
+	}
+	else if (result == UNBOUNDED) {
+		cout << "¸ÃÎÊÌâÎŞÓĞ½ç×îÓÅ½â" << endl;
+		return;
+	}
+	double target_value = 0;
+	for (vX::const_iterator itx = X.cbegin(); itx != X.cend(); ++itx) {
+		int index = distance(X.cbegin(), itx);
+		target_value += (*itx).value * C.at(index);
+	}
+	target_value += offset;
+	if (IsInt(target_value))
+		target_value = SimplifyToInt(target_value);
+	cout << "target value is " << target_value;
+	cout << ", get at (";
+	for (vX::const_iterator itx = X.cbegin();;) {
+		cout << (*itx).name << "=" << (*itx).value;
+		if (++itx != X.cend())  // ´Ë´¦ÅĞ¶ÏÑ­»·ÊÇ·ñ½áÊø
+			cout << ", ";
+		else
+			break;
+	}
+	cout << ")" << endl;
 }
 
 bool Problem::TestConstraint() {
-    // this->OutputPblm();
-    assert(this->IsStandard());
-    for (vB::const_iterator itb = B.cbegin(); itb != B.cend(); ++itb) {  // æŒ‰çº¦æŸéå†
-        double sigma = 0;
-        int index = distance(B.cbegin(), itb);
-        int Psz = P.size();
-        for (int i = 0; i < Psz; ++i)
-            sigma += P.at(i).at(index) * X.at(i).value;
-        // for (int i = 0; i < Psz; ++i)
-        //     cout << "P is " << P.at(i).at(index) << ", X is " << X.at(i).value << endl;
-        if (!equals(sigma, (*itb).second)) {
-            cout << "sigma is " << sigma << ", rhs is " << (*itb).second << endl;
-            return false;
-        }
-    }
-    return true;
+	// this->OutputPblm();
+	assert(this->IsStandard());
+	for (vB::const_iterator itb = B.cbegin(); itb != B.cend(); ++itb) {  // °´Ô¼Êø±éÀú
+		double sigma = 0;
+		int index = distance(B.cbegin(), itb);
+		int Psz = P.size();
+		for (int i = 0; i < Psz; ++i)
+			sigma += P.at(i).at(index) * X.at(i).value;
+		// for (int i = 0; i < Psz; ++i)
+		//     cout << "P is " << P.at(i).at(index) << ", X is " << X.at(i).value << endl;
+		if (!equals(sigma, (*itb).second)) {
+			cout << "sigma is " << sigma << ", rhs is " << (*itb).second << endl;
+			return false;
+		}
+	}
+	return true;
 }
 
 void Problem::SimplifyDouble() {
-    for (vX::iterator itx = X.begin(); itx != X.end(); ++itx)
-        if (IsInt((*itx).value))
-            (*itx).value = SimplifyToInt((*itx).value);
-    for (vValue::iterator itc = C.begin(); itc != C.cend(); ++itc)
-        if (IsInt(*itc))
-            (*itc) = SimplifyToInt((*itc));
+	for (vX::iterator itx = X.begin(); itx != X.end(); ++itx)
+		if (IsInt((*itx).value))
+			(*itx).value = SimplifyToInt((*itx).value);
+	for (vValue::iterator itc = C.begin(); itc != C.cend(); ++itc)
+		if (IsInt(*itc))
+			(*itc) = SimplifyToInt((*itc));
 
-    if (IsInt(offset))
-        offset = SimplifyToInt(offset);
-    for (vB::iterator itb = B.begin(); itb != B.end(); ++itb) {
-        if (IsInt((*itb).second))
-            (*itb).second = SimplifyToInt((*itb).second);
-        int index = distance(B.begin(), itb);
-        for (vP::iterator itp = P.begin(); itp != P.end(); ++itp)
-            if (IsInt((*itp).at(index)))
-                (*itp).at(index) = SimplifyToInt((*itp).at(index));
-    }
+	if (IsInt(offset))
+		offset = SimplifyToInt(offset);
+	for (vB::iterator itb = B.begin(); itb != B.end(); ++itb) {
+		if (IsInt((*itb).second))
+			(*itb).second = SimplifyToInt((*itb).second);
+		int index = distance(B.begin(), itb);
+		for (vP::iterator itp = P.begin(); itp != P.end(); ++itp)
+			if (IsInt((*itp).at(index)))
+				(*itp).at(index) = SimplifyToInt((*itp).at(index));
+	}
 }

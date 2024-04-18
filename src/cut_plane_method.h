@@ -1,75 +1,19 @@
 /*
- * æ•´æ•°çº¿æ€§è§„åˆ’ï¼Œå‰²å¹³é¢æ³•
+ * ÕûÊıÏßĞÔ¹æ»®£¬¸îÆ½Ãæ·¨
  */
 
 #pragma once
-#include <queue>
 
-#include "./branch_bound_method.h"
 #include "./dual_simplex_method.h"
 #include "./problem.h"
 #include "./simplex_method.h"
+#include <queue>
 using namespace std;
 
-// Problem* CutPlaneMethod(Problem* pblm0) {
-//     Problem* pblm = new Problem(*pblm0);  // æ·±æ‹·è´
-//     {
-//         // ç¡®ä¿pblmå·²æ•´æ•°åŒ–
-//         for (vB::const_iterator itb = pblm->B.cbegin(); itb != pblm->B.cend(); ++itb) {
-//             assert(IsInt((*itb).second));
-//             int index = distance(pblm->B.cbegin(), itb);
-//             for (vP::const_iterator itp = pblm->P.cbegin(); itp != pblm->P.cend(); ++itp)
-//                 assert(IsInt((*itp).at(index)));
-//         }
-//         for (vX::const_iterator itx = pblm->X.cbegin(); itx != pblm->X.cend(); ++itx)
-//             assert(IsInt((*itx).value));
-//     }
-//     pblm = pblm->Standardlize();
-//     pblm->result = UNKNOWN;
-//     while (true) {
-//         Problem* pblm_tmp = SimplexMethod(pblm);  // pblm_tmpä»…ç”¨äºå‚¨å­˜ç»“æœ
-//         pblm_tmp->OutputResult();
-//         tResult* rst = pblm_tmp->GetResult();
-//         // pblm_tmp->OutputResult();
-//         pblm_tmp->OutputConstraint();
-//         if (IsIntResult(rst))
-//             return pblm_tmp;  // æ— è§£æ€ä¹ˆå¤„ç†
-//         int m = pblm->B.size();
-//         bool flag = false;  // åˆ¤æ–­æ˜¯å¦ç»§ç»­
-//         for (int i_m = 0; i_m < m; i_m++) {
-//             // å¯¹äºè§£(pblm_tmp)ç»“æœçš„æ¯ä¸€è¡Œå¾—å‡ºæ–°çš„çº¦æŸï¼Œä¿®æ”¹pblm
-//             // cout << "i_m is " << i_m << endl;
-//             if (IsInt(pblm_tmp->B.at(i_m).second))
-//                 continue;
-//             // cout << "new constraint!" << endl;
-//             flag = true;
-//             double f_tmp;  // tmp in (0,1)
-//             cout << "æ–°å¢çš„çº¦æŸæ¡ä»¶ä¸º" << endl;
-//             for (vP::const_iterator itp = pblm_tmp->P.cbegin(); itp != pblm_tmp->P.cend(); ++itp) {
-//                 if (IsInt((*itp).at(i_m)))
-//                     f_tmp = 0;
-//                 else
-//                     f_tmp = (*itp).at(i_m) - floor((*itp).at(i_m));
-//                 // cout << "f_tmp is " << f_tmp << endl;
-//                 int index = distance(pblm_tmp->P.cbegin(), itp);
-//                 pblm->P.at(index).push_back(f_tmp);
-//                 if (f_tmp)
-//                     cout << " +" << f_tmp << "*Var_" << index;
-//             }
-//             f_tmp = pblm_tmp->B.at(i_m).second - floor(pblm_tmp->B.at(i_m).second);
-//             pblm->B.push_back(make_pair(LARGE_EQUAL, f_tmp));
-//             cout << " >=" << f_tmp << ";" << endl;
-//         }
-//         if (flag == false)
-//             break;
-//     }
-//     return pblm;
-// }
-
 Problem* CutPlaneMethod(Problem* pblm0) {
-    Problem* pblm = new Problem(*pblm0);  // æ·±æ‹·è´
+    Problem* pblm = new Problem(*pblm0);  // Éî¿½±´
     {
-        // ç¡®ä¿pblmå·²æ•´æ•°åŒ–
+        // È·±£pblmÒÑÕûÊı»¯
         for (vB::const_iterator itb = pblm->B.cbegin(); itb != pblm->B.cend(); ++itb) {
             assert(IsInt((*itb).second));
             int index = distance(pblm->B.cbegin(), itb);
@@ -78,7 +22,7 @@ Problem* CutPlaneMethod(Problem* pblm0) {
         }
         for (vX::const_iterator itx = pblm->X.cbegin(); itx != pblm->X.cend(); ++itx)
             assert(IsInt((*itx).value));
-        // ç¡®ä¿PBXéƒ½è¢«æ•´æ•°åŒ–
+        // È·±£PBX¶¼±»ÕûÊı»¯
     }
     pblm = SimplexMethod(pblm);
 
@@ -90,13 +34,13 @@ Problem* CutPlaneMethod(Problem* pblm0) {
             return pblm;
         pblm->result = UNKNOWN;
         int m = pblm->B.size();
-        bool flag = false;  // åˆ¤æ–­æ˜¯å¦ç»§ç»­
+        bool goOnLoop = false;  // ÅĞ¶ÏÊÇ·ñ¼ÌĞø
         for (int i_m = 0; i_m < m; i_m++) {
-            // å¯¹äºè§£ç»“æœçš„æ¯ä¸€è¡Œå¾—å‡ºæ–°çš„çº¦æŸï¼Œä¿®æ”¹pblm
+            // ¶ÔÓÚ½â½á¹ûµÄÃ¿Ò»ĞĞµÃ³öĞÂµÄÔ¼Êø£¬ĞŞ¸Äpblm
             // cout << "i_m is " << i_m << endl;
             if (IsInt(pblm->B.at(i_m).second))
                 continue;
-            flag = true;
+            goOnLoop = true;
             double f_tmp;  // f_tmp in (0,1)
             for (vP::iterator itp = pblm->P.begin(); itp != pblm->P.end(); ++itp) {
                 if (IsInt((*itp).at(i_m)))
@@ -107,14 +51,14 @@ Problem* CutPlaneMethod(Problem* pblm0) {
             }
             f_tmp = pblm->B.at(i_m).second - floor(pblm->B.at(i_m).second);
             pblm->B.push_back(make_pair(EQUAL, -f_tmp));
-            // æ¯æ–°åŠ å…¥ä¸€ä¸ªçº¦æŸï¼Œéƒ½éœ€è¦æ–°å¢ä¸€ä¸ªæ¾å¼›å˜é‡
+            // Ã¿ĞÂ¼ÓÈëÒ»¸öÔ¼Êø£¬¶¼ĞèÒªĞÂÔöÒ»¸öËÉ³Ú±äÁ¿
             tRightSide rhs(LARGE_EQUAL, 0);
-            tVar var("__flabby_" + to_string(pblm->B.size() - 1) + "__", rhs, 0.0);  // è¯¥è¡Œä¸ºæ–°å¢ï¼Œå¯ä»¥ä¿è¯å˜é‡ä¸é‡å
+            tVar var("__flabby_" + to_string(pblm->B.size() - 1) + "__", rhs, 0.0);  // ¸ÃĞĞÎªĞÂÔö£¬¿ÉÒÔ±£Ö¤±äÁ¿²»ÖØÃû
             pblm->X.push_back(var);
             pblm->C.push_back(0.0);
-            pblm->P.push_back(vector(pblm->B.size(), 0.0));
+            pblm->P.push_back(vector<double>(pblm->B.size(), 0.0));
             pblm->P.back().back() = 1;
-            // cout << "æ–°å¢çº¦æŸä¸º" << endl;
+            // cout << "ĞÂÔöÔ¼ÊøÎª" << endl;
             // for (int i_n = 0; i_n < pblm->X.size(); i_n++) {
             //     if (equals(pblm->P.at(i_n).back(), 0))
             //         continue;
@@ -122,18 +66,18 @@ Problem* CutPlaneMethod(Problem* pblm0) {
             // }
             // cout << " = " << pblm->B.back().second << endl;
         }
-        if (flag == false)
+        if (!goOnLoop)
             break;
         pblm = DualSimplexMethod(pblm);
     }
     return pblm;
 }
 
-// æ‰€æœ‰å˜é‡å‡ä¸ºæ•´æ•°æ‰èƒ½ä¿è¯ç®—æ³•æ­£ç¡®è¿è¡Œ
-// å› æ­¤å‰©ä½™å˜é‡ä¸æ¾å¼›å˜é‡ä¹Ÿéœ€è¦ä¸ºæ•´æ•°
-// åœ¨æ±‚å–æ–°çº¦æŸæ—¶ï¼Œå¾—åˆ°ä¸‹â‘ å¼ï¼š
-// â‘     N*x + f*x = B + bï¼Œå…¶ä¸­f,b in [0,1)ï¼Œä»è€Œå¾—åˆ°ä¸‹â‘¡å¼ï¼š
-// â‘¡    N*x - B = b - f*xï¼Œ
-// è€ƒè™‘b<1ä¸”â‘¡å¼å·¦ä¾§ä¸ºæ•´æ•°ï¼Œæ˜¾ç„¶å³ä¾§ä¸ºæ•´æ•°ï¼Œä¸”å–å€¼éæ­£
-// æ•…å¯ä»¥å¾—åˆ°æ–°çº¦æŸ-f*x + x' = -bï¼Œä¸”x'ä¸ºéè´Ÿæ•´æ•°   // æ¾å¼›å˜é‡ï¼Œå¯¹å¶å•çº¯å½¢æ³•
-// æˆ–å¾—åˆ°f*x - x'' = bï¼Œx'ä¸ºéè´Ÿæ•´æ•°               // å•çº¯å½¢æ³•
+// ËùÓĞ±äÁ¿¾ùÎªÕûÊı²ÅÄÜ±£Ö¤Ëã·¨ÕıÈ·ÔËĞĞ
+// Òò´ËÊ£Óà±äÁ¿ÓëËÉ³Ú±äÁ¿Ò²ĞèÒªÎªÕûÊı
+// ÔÚÇóÈ¡ĞÂÔ¼ÊøÊ±£¬µÃµ½ÏÂ¢ÙÊ½£º
+// ¢Ù    N*x + f*x = B + b£¬ÆäÖĞf,b in [0,1)£¬´Ó¶øµÃµ½ÏÂ¢ÚÊ½£º
+// ¢Ú    N*x - B = b - f*x£¬
+// ¿¼ÂÇb<1ÇÒ¢ÚÊ½×ó²àÎªÕûÊı£¬ÏÔÈ»ÓÒ²àÎªÕûÊı£¬ÇÒÈ¡Öµ·ÇÕı
+// ¹Ê¿ÉÒÔµÃµ½ĞÂÔ¼Êø-f*x + x' = -b£¬ÇÒx'Îª·Ç¸ºÕûÊı   // ËÉ³Ú±äÁ¿£¬¶ÔÅ¼µ¥´¿ĞÎ·¨
+// »òµÃµ½f*x - x'' = b£¬x'Îª·Ç¸ºÕûÊı               // µ¥´¿ĞÎ·¨

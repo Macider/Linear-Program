@@ -1,33 +1,33 @@
 /*
- * æ•´æ•°çº¿æ€§è§„åˆ’ï¼Œåˆ†æ”¯å®šç•Œæ³•
+ * ÕûÊıÏßĞÔ¹æ»®£¬·ÖÖ§¶¨½ç·¨
  */
 
 #pragma once
-#include <queue>
 
 #include "./dual_simplex_method.h"
 #include "./problem.h"
 #include "./simplex_method.h"
+#include <queue>
 using namespace std;
 
 // ()
 struct cmp {
     bool operator()(pair<vX, tResult*> p1, pair<vX, tResult*> p2) {
-        return p1.second->first < p2.second->first;  // å¤§é¡¶å †
+        return p1.second->first < p2.second->first;  // ´ó¶¥¶Ñ
     }
 };
 static int upperBound;
 static int lowerBound;
-static queue<pair<vX, tResult*>> pblmStack;  // æ ˆä¸­åªéœ€è¦å­˜æ”¾vX
+static queue<pair<vX, tResult*>> pblmStack;  // Õ»ÖĞÖ»ĞèÒª´æ·ÅvX
 static priority_queue<pair<vX, tResult*>, vector<pair<vX, tResult*>>, cmp> pblmQueue;
-static Problem* intPblm;  // ä¸€å®šä¼šæœ‰å—
+static Problem* intPblm;  // Ò»¶¨»áÓĞÂğ
 
 inline void OutputBound() {
-    cout << "å½“å‰ä¸Šç•Œä¸º" << upperBound << ", å½“å‰ä¸‹ç•Œä¸º" << lowerBound << endl;
+    cout << "µ±Ç°ÉÏ½çÎª" << upperBound << ", µ±Ç°ÏÂ½çÎª" << lowerBound << endl;
 }
 
 Problem* BranchBoundMethod(Problem* pblm0) {
-    Problem* pblm = new Problem(*pblm0);  // æ·±æ‹·è´
+    Problem* pblm = new Problem(*pblm0);  // Éî¿½±´
     pblm = SimplexMethod(pblm);
     tResult* rst = pblm->GetResult();
     upperBound = floor(rst->first);
@@ -38,20 +38,20 @@ Problem* BranchBoundMethod(Problem* pblm0) {
         pblmQueue.push(make_pair(pblm->X, rst));
     }
     while (!pblmQueue.empty()) {
-        // æŒ‰ç…§result.firstè¿›è¡Œæ’åºï¼Œé˜Ÿé¦–å…ƒç´ çš„result.firstå³ä¸ºä¸Šç•Œ
+        // °´ÕÕresult.first½øĞĞÅÅĞò£¬¶ÓÊ×ÔªËØµÄresult.first¼´ÎªÉÏ½ç
         rst = pblmQueue.top().second;
         upperBound = floor(rst->first);
         OutputBound();
         int firstNotInt = 0;
         while (IsInt(rst->second.at(firstNotInt)))
             firstNotInt++;
-        cout << "ç¬¬ä¸€ä¸ªéæ•´æ•°å˜é‡ä¸º" << firstNotInt << endl;
+        cout << "µÚÒ»¸ö·ÇÕûÊı±äÁ¿Îª" << firstNotInt << endl;
 
         vX* X_tmp;
         Problem* pblm_tmp;
         tResult* rst_tmp;
 
-        cout << "è®¿é—®å·¦å­èŠ‚ç‚¹" << endl;
+        cout << "·ÃÎÊ×ó×Ó½Úµã" << endl;
         X_tmp = new vX(pblmQueue.top().first);
         X_tmp->at(firstNotInt).rhs = make_pair(SMALL_EQUAL, floor(rst->second.at(firstNotInt)));
         pblm_tmp = new Problem(*pblm);
@@ -66,11 +66,11 @@ Problem* BranchBoundMethod(Problem* pblm0) {
             }
             if (!IsIntResult(rst_tmp) && rst_tmp->first > lowerBound) {
                 pblmQueue.push(make_pair(*X_tmp, rst_tmp));
-                cout << "å·¦å­èŠ‚ç‚¹å…¥é˜Ÿ" << endl;
+                cout << "×ó×Ó½ÚµãÈë¶Ó" << endl;
             }
         }
 
-        cout << "è®¿é—®å³å­èŠ‚ç‚¹" << endl;
+        cout << "·ÃÎÊÓÒ×Ó½Úµã" << endl;
         X_tmp = new vX(pblmQueue.top().first);
         X_tmp->at(firstNotInt).rhs = make_pair(LARGE_EQUAL, floor(rst->second.at(firstNotInt)) + 1);
         pblm_tmp = new Problem(*pblm);
@@ -85,7 +85,7 @@ Problem* BranchBoundMethod(Problem* pblm0) {
             }
             if (!IsIntResult(rst_tmp) && rst_tmp->first > lowerBound) {
                 pblmQueue.push(make_pair(*X_tmp, rst_tmp));
-                cout << "å³å­èŠ‚ç‚¹å…¥é˜Ÿ" << endl;
+                cout << "ÓÒ×Ó½ÚµãÈë¶Ó" << endl;
             }
         }
 
@@ -93,14 +93,14 @@ Problem* BranchBoundMethod(Problem* pblm0) {
         OutputBound();
         pblmQueue.pop();
     }
-    return intPblm;  // å¦‚æœæ²¡æœ‰åˆé€‚çš„è§£ï¼Œå¾—åˆ°çš„åº”è¯¥æ˜¯åˆå§‹é—®é¢˜ï¼Œresultä¸ºNO_SOLUTION
+    return intPblm;  // Èç¹ûÃ»ÓĞºÏÊÊµÄ½â£¬µÃµ½µÄÓ¦¸ÃÊÇ³õÊ¼ÎÊÌâ£¬resultÎªNO_SOLUTION
 }
 
-// å¯¹äºæ•´æ•°è§„åˆ’é—®é¢˜ï¼Œæ±‚å…¶ä¸€èˆ¬è§„åˆ’ç»“æœçš„floorä¸ºz+ï¼Œå–z-ä¸ºINT_MIN
-// åˆ†æ”¯ï¼šå¯¹äºä¸ä¸ºæ•´æ•°çš„å˜é‡ï¼Œä¾æ¬¡åŠ ä¸Šxi>=[a]+1å’Œxi<=[a]çš„çº¦æŸè¿›è¡Œæ±‚è§£
-// å®šç•Œï¼šæ±‚è§£ç»“æœä¸­æœ€å¤§è€…ä½œä¸ºæ–°z+ï¼Œæ±‚è§£ç»“æœä¸­ç¬¦åˆæ•´æ•°æ¡ä»¶çš„æœ€å¤§è€…ä½œä¸ºz-
-// å‰ªæï¼šè‹¥æœ‰åˆ†æ”¯æ±‚è§£ç»“æœå°äºz-åˆ™å‰ªæï¼Œå¤§äºz-ä¸”ä¸ç¬¦åˆæ•´æ•°æ¡ä»¶åˆ™ç»§ç»­
-// å®½åº¦ä¼˜å…ˆè¿˜æ˜¯æ·±åº¦ä¼˜å…ˆï¼ŸBFSç›¸å¯¹æ›´åˆé€‚
-// åº”è¯¥ä½¿ç”¨æŒ‰å‡½æ•°å€¼ç»“æœæ’åºçš„ä¼˜å…ˆé˜Ÿåˆ—ï¼Œä½¿å¾—z+æœ€å¿«ä¸‹é™ï¼Œå§‹ç»ˆä½œä¸ºé˜Ÿé¦–å…ƒç´ 
-// ä¸Šç•Œä¸å†éœ€è¦æ˜¾å¼ç»´æŠ¤
-// éœ€è¦ä¸¤ä¸ªpblmå®ä¾‹ï¼Œä¸€ä¸ªç”¨äºå‚¨å­˜æ•´æ•°è§„åˆ’ç»“æœï¼Œä¸€ä¸ªä½œä¸ºä¸´æ—¶å˜é‡
+// ¶ÔÓÚÕûÊı¹æ»®ÎÊÌâ£¬ÇóÆäÒ»°ã¹æ»®½á¹ûµÄfloorÎªz+£¬È¡z-ÎªINT_MIN
+// ·ÖÖ§£º¶ÔÓÚ²»ÎªÕûÊıµÄ±äÁ¿£¬ÒÀ´Î¼ÓÉÏxi>=[a]+1ºÍxi<=[a]µÄÔ¼Êø½øĞĞÇó½â
+// ¶¨½ç£ºÇó½â½á¹ûÖĞ×î´óÕß×÷ÎªĞÂz+£¬Çó½â½á¹ûÖĞ·ûºÏÕûÊıÌõ¼şµÄ×î´óÕß×÷Îªz-
+// ¼ôÖ¦£ºÈôÓĞ·ÖÖ§Çó½â½á¹ûĞ¡ÓÚz-Ôò¼ôÖ¦£¬´óÓÚz-ÇÒ²»·ûºÏÕûÊıÌõ¼şÔò¼ÌĞø
+// ¿í¶ÈÓÅÏÈ»¹ÊÇÉî¶ÈÓÅÏÈ£¿BFSÏà¶Ô¸üºÏÊÊ
+// Ó¦¸ÃÊ¹ÓÃ°´º¯ÊıÖµ½á¹ûÅÅĞòµÄÓÅÏÈ¶ÓÁĞ£¬Ê¹µÃz+×î¿ìÏÂ½µ£¬Ê¼ÖÕ×÷Îª¶ÓÊ×ÔªËØ
+// ÉÏ½ç²»ÔÙĞèÒªÏÔÊ½Î¬»¤
+// ĞèÒªÁ½¸öpblmÊµÀı£¬Ò»¸öÓÃÓÚ´¢´æÕûÊı¹æ»®½á¹û£¬Ò»¸ö×÷ÎªÁÙÊ±±äÁ¿

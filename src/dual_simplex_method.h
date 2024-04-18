@@ -1,20 +1,20 @@
 /*
- * å¯¹å¶å•çº¯å½¢æ³•
+ * ¶ÔÅ¼µ¥´¿ĞÎ·¨
  */
-// åœ¨æ— è§£æ—¶ä¼šæ€ä¹ˆæ ·
+// ÔÚÎŞ½âÊ±»áÔõÃ´Ñù
 #pragma once
 
-#include "./problem.h"
 #include "./simplex_method.h"
+#include "./problem.h"
 using namespace std;
 
-// å£°æ˜åŒº
-ResultType DualSimplex(Problem*, Base*);  // æ‰¾åˆ°å…¥åŸºå˜é‡å’Œå‡ºåŸºå˜é‡
-Problem* DualSimplexMethod(Problem*);     // ä¾åºè°ƒç”¨initializeã€simplexã€pivot
+// ÉùÃ÷Çø
+ResultType DualSimplex(Problem*, Base*);  // ÕÒµ½Èë»ù±äÁ¿ºÍ³ö»ù±äÁ¿
+Problem* DualSimplexMethod(Problem*);     // ÒÀĞòµ÷ÓÃinitialize¡¢simplex¡¢pivot
 
-// å‡½æ•°åŒº
+// º¯ÊıÇø
 ResultType DualSimplex(Problem* pblm, Base* base) {
-    // å…ˆå®šå‡ºåŸºï¼Œå†å®šå…¥åŸº
+    // ÏÈ¶¨³ö»ù£¬ÔÙ¶¨Èë»ù
     cout << "DualSimplex!" << endl;
     int m = pblm->B.size(), n = pblm->X.size();
 
@@ -25,7 +25,7 @@ ResultType DualSimplex(Problem* pblm, Base* base) {
     // }
     // pblm->offset = ofst;
 
-    int leaveBaseVar = -1;  // å‡ºåŸºå˜é‡
+    int leaveBaseVar = -1;  // ³ö»ù±äÁ¿
     double minB = 0;
     for (int i_m = 0; i_m < m; i_m++)
         if (pblm->B.at(i_m).second <= minB) {
@@ -33,19 +33,19 @@ ResultType DualSimplex(Problem* pblm, Base* base) {
             minB = pblm->B.at(i_m).second;
         }
     if (leaveBaseVar == -1) {
-        cout << "å¯¹å¶é—®é¢˜æ‰€æœ‰æ£€éªŒæ•°å‡ä¸ºè´Ÿï¼Œåˆ°è¾¾æœ€ä¼˜è§£" << endl;
+        cout << "¶ÔÅ¼ÎÊÌâËùÓĞ¼ìÑéÊı¾ùÎª¸º£¬µ½´ï×îÓÅ½â" << endl;
         return ONE_SOLUTION;
     }
     if (minB == 0) {
-        cout << "å¯¹å¶é—®é¢˜æœ€å¤§æ£€éªŒæ•°ä¸º0" << endl;
+        cout << "¶ÔÅ¼ÎÊÌâ×î´ó¼ìÑéÊıÎª0" << endl;
         return MAYBE_MANY;
     }
     cout << "leaveBaseVar is " << leaveBaseVar << endl;
     cout << "m is " << m << ", n is " << n << endl;
-    double minLamda = DBL_MAX;  // å¯»æ‰¾æœ€å°çš„æ£€éªŒæ•°å¯¹åº”å˜é‡å…¥åŸº
+    double minLamda = DBL_MAX;  // Ñ°ÕÒ×îĞ¡µÄ¼ìÑéÊı¶ÔÓ¦±äÁ¿Èë»ù //ÊÂÊµÉÏÒòÎª³ıÁËÒ»¸öa£¬²¢²»ÊÇ¼ìÑéÊı
     int enterBaseVar = -1;
     pblm->OutputConstraint();       
-    for (int i_n = 0; i_n < n; i_n++) {         // éå†æ‰€æœ‰å˜é‡ï¼Œæ‰¾åˆ°lamdaæœ€å°çš„ä¸€ä¸ª
+    for (int i_n = 0; i_n < n; i_n++) {         // ±éÀúËùÓĞ±äÁ¿£¬ÕÒµ½lamda×îĞ¡µÄÒ»¸ö
         // cout << "i_n is " << i_n << endl;
         // cout << "constraintOfBaseVar[leaveBaseVar] is " << base->constraintOfBaseVar[leaveBaseVar] << endl;
         if (pblm->P.at(i_n).at(base->constraintOfBaseVar[leaveBaseVar]) >= 0)
@@ -65,16 +65,16 @@ ResultType DualSimplex(Problem* pblm, Base* base) {
     base->enterBaseVar = enterBaseVar;
     base->leaveBaseVar = leaveBaseVar;
 
-    cout << "å‡ºåŸºå˜é‡ä¸º" << pblm->X.at(leaveBaseVar).name << "; å…¥åŸºå˜é‡ä¸º" << pblm->X.at(enterBaseVar).name << endl;
-    return UNKNOWN;  // ç»§ç»­è¿›è¡Œ
+    cout << "³ö»ù±äÁ¿Îª" << pblm->X.at(leaveBaseVar).name << "; Èë»ù±äÁ¿Îª" << pblm->X.at(enterBaseVar).name << endl;
+    return UNKNOWN;  // ¼ÌĞø½øĞĞ
 }
 
 Problem* DualSimplexMethod(Problem* pblm0) {
-    // å¯¹è¾“å…¥çš„å¯¹è±¡è¿›è¡Œå¯¹å¶å•çº¯å½¢æ³•æ±‚è§£ï¼Œè¿”å›å˜å½¢ç»“æŸçš„å•çº¯å½¢æ³•
-    // å‰ç½®è¦æ±‚ï¼šmaxã€C<=0ã€B<=0ã€X>=0ã€çº¦æŸå–ç­‰
-    Problem* pblm = new Problem(*pblm0);  // æ·±æ‹·è´
+    // ¶ÔÊäÈëµÄ¶ÔÏó½øĞĞ¶ÔÅ¼µ¥´¿ĞÎ·¨Çó½â£¬·µ»Ø±äĞÎ½áÊøµÄµ¥´¿ĞÎ·¨
+    // Ç°ÖÃÒªÇó£ºmax¡¢C<=0¡¢B<=0¡¢X>=0¡¢Ô¼ÊøÈ¡µÈ
+    Problem* pblm = new Problem(*pblm0);  // Éî¿½±´
     if (!pblm->IsStandard())
-        pblm = pblm->Standardlize(UNLIMITED);  // éœ€è¦è¿›è¡Œç‰¹æ®Šæ ‡å‡†åŒ–
+        pblm = pblm->Standardlize(UNLIMITED);  // ĞèÒª½øĞĞÌØÊâ±ê×¼»¯
     if (pblm->RangeB() == LARGE_EQUAL)
         pblm->ChangeB(SMALL_EQUAL);
     assert(pblm->RangeC() == SMALL_EQUAL);
