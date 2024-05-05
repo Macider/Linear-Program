@@ -90,9 +90,10 @@ Problem* BranchBoundMethod(Problem* pblm0) {
         }
 
         delete pblm_tmp;
-        OutputBound();
         pblmQueue.pop();
+        // cout << pblmQueue.top().second->first << endl;
     }
+    cout << "End and Return!" << endl;
     return intPblm;  // 如果没有合适的解，得到的应该是初始问题，result为NO_SOLUTION
 }
 
