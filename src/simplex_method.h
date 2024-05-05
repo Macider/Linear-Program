@@ -24,14 +24,29 @@ ResultType Simplex(Problem* pblm, Base* base) {
     // cout << "m is " << m << ", n is " << n << endl;
     double maxLamda = 0;    // 寻找最大的检验数对应变量入基
     int enterBaseVar = -1;  // 入基变量
-    for (int i_n = 0; i_n < n; i_n++)
-        if (base->constraintOfBaseVar[i_n] != NOTBASIC)
-            pblm->offset += pblm->C.at(i_n) * pblm->B.at(base->constraintOfBaseVar[i_n]).second;
+
+    // 已弃用代码，仅留作debug参考
+    // 修改offset，一般来说基变量的C都为0，只有刚成为基变量还没进行simplex的基变量的C会不为0
+    // for (int i_n = 0; i_n < n; i_n++)
+    //     if (base->constraintOfBaseVar[i_n] != NOTBASIC)
+    //         pblm->offset += pblm->C.at(i_n) * pblm->B.at(base->constraintOfBaseVar[i_n]).second;
+
+    // 将基变量所在的方程代入目标函数，一般来说Cbase=0，只有刚成为基变量还没进行simplex的基变量的C会不为0
+    for (int i_m = 0; i_m < m; i_m++) {  // 遍历所有基变量
+        double Cbase = pblm->C.at(base->baseVarOfConstraint[i_m]);
+        if (equals(Cbase, 0))
+            continue;
+        pblm->offset += Cbase * pblm->B.at(i_m).second;
+        for (int i_n = 0; i_n < n; i_n++)  // 遍历所有非基变量
+            pblm->C.at(i_n) -= Cbase * pblm->P.at(i_n).at(i_m);
+    }
+    // 遍历所有非基变量，找到合适的变量入基
     for (int i_n = 0; i_n < n; i_n++) {
         if (base->constraintOfBaseVar[i_n] != NOTBASIC)  // 在找入基变量，不用考虑基变量
             continue;
-        for (int i_m = 0; i_m < m; i_m++)  // baseVarOfConstraint[i_m]是第i_m号方程对应的基变量
-            pblm->C.at(i_n) -= pblm->C.at(base->baseVarOfConstraint[i_m]) * pblm->P.at(i_n).at(i_m);
+        // 一般来说，右侧的C取值为0，只有新入基第一次simplex的变量的C不为0
+        // for (int i_m = 0; i_m < m; i_m++)  // baseVarOfConstraint[i_m]是第i_m号方程对应的基变量
+        //     pblm->C.at(i_n) -= pblm->C.at(base->baseVarOfConstraint[i_m]) * pblm->P.at(i_n).at(i_m);
         // cout << "Lamda[" << pblm->X.at(i_n).name << "] = " << pblm->C.at(i_n) << endl;
         if (largeEquals(pblm->C.at(i_n), maxLamda)) {
             enterBaseVar = i_n;  // 总是选择序号大的变量入基
@@ -39,7 +54,7 @@ ResultType Simplex(Problem* pblm, Base* base) {
         }
         if (largeThan(pblm->C.at(i_n), 0))
             for (int i_m = 0; i_m < m; i_m++) {
-                if (largeThan(pblm->P.at(i_n).at(i_m), 0))  
+                if (largeThan(pblm->P.at(i_n).at(i_m), 0))
                     break;
                 if (i_m == m - 1) {
                     cout << "无有界最优解" << endl;
@@ -47,8 +62,6 @@ ResultType Simplex(Problem* pblm, Base* base) {
                 }
             }
     }
-    for (int i_m = 0; i_m < m; i_m++)
-        pblm->C.at(base->baseVarOfConstraint[i_m]) = 0;  //  基变量系数置为0
     // 至此已决定入基变量
     // cout << "maxLamda is " << maxLamda << ", enterBaseVar is " << enterBaseVar << endl;
     // cout << "    当前目标函数为";
@@ -61,6 +74,8 @@ ResultType Simplex(Problem* pblm, Base* base) {
         cout << "    最大检验数为0" << endl;
         return MAYBE_MANY;
     }
+
+    // theta的实质为入基变量的增加值(theta>0)
     double minTheta = DBL_MAX;
     int leaveBaseVar = -1;
     for (int i_m = 0; i_m < m; i_m++) {
@@ -73,6 +88,8 @@ ResultType Simplex(Problem* pblm, Base* base) {
     }
     // cout << "minTheta is " << minTheta << ", leaveBaseVar is " << leaveBaseVar << endl;
     assert(leaveBaseVar != -1);  // 某一列变量全部小于等于0
+
+    // cout << "目标函数将增加" << minTheta * pblm->C.at(enterBaseVar) << "，预计将增加至" << pblm->offset + minTheta * pblm->C.at(enterBaseVar) << endl;  // 理论上一定要大于0
     base->enterBaseVar = enterBaseVar;
     base->leaveBaseVar = leaveBaseVar;
 
@@ -110,8 +127,9 @@ Problem* SimplexMethod(Problem* pblm0) {
     Problem* pblm = new Problem(*pblm0);  // 深拷贝
 
     Base* base = SimplexInitialize(pblm);
+
     if (pblm->result == UNKNOWN)
-        while (Simplex(pblm, base) == UNKNOWN)
+        while (Simplex(pblm, base) == UNKNOWN) 
             Pivot(pblm, base);
     cout << "End!" << endl;
     pblm->SimplifyDouble();

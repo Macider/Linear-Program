@@ -244,7 +244,7 @@ Problem* InputPblm() {
                 if ((*itx).name == name)
                     break;
             if (itx == pblm->X.end())
-                cout << "var name is "<< name <<", not found, error!" << endl;
+                cout << "var name is " << name << ", not found, error!" << endl;
             int index = distance(pblm->X.begin(), itx);
             pblm->C.at(index) += c;  // 考虑到可能有 x1+x2+x1的情况
         }
@@ -358,9 +358,11 @@ Problem* InputPblm() {
 }
 
 void Problem::OutputPblm() {
-    OutputVar();         // 输出变量及范围
+    OutputVar();  // 输出变量及范围
+    cout << "共" << X.size() << "个变量" << endl;
     OutputTarget();      // 输出目标函数
     OutputConstraint();  // 输出约束条件
+    cout << "共" << B.size() << "个约束条件" << endl;
 }
 
 void Problem::OutputVar() {
@@ -368,23 +370,25 @@ void Problem::OutputVar() {
         cout << (*itx).name;
         switch ((*itx).rhs.first) {
             case UNLIMITED:
-                cout << " is unlimited" << endl;
+                cout << "?" << endl;
                 break;
             case LARGE_EQUAL:
-                cout << ">=" << (*itx).rhs.second << endl;
+                cout << ">=" << (*itx).rhs.second;
                 break;
             case SMALL_EQUAL:
-                cout << "<=" << (*itx).rhs.second << endl;
+                cout << "<=" << (*itx).rhs.second;
                 break;
             case EQUAL:
-                cout << "=" << (*itx).rhs.second << endl;
+                cout << "=" << (*itx).rhs.second;
                 break;
             default:
-                cout << "output Error!" << endl;
+                cout << "output Error!";
                 break;
         }
+        if (itx + 1 != X.cend())
+            cout << ",";
     }
-    cout << "共" << X.size() << "个变量" << endl;
+    cout << ";" << endl;
 }
 
 void Problem::OutputTarget() {
@@ -409,7 +413,7 @@ void Problem::OutputTarget() {
             cout << "+";
         cout << offset;
     }
-    cout << endl;
+    cout << ";" << endl;
 }
 
 void Problem::OutputConstraint() {
@@ -427,23 +431,25 @@ void Problem::OutputConstraint() {
         }
         switch ((*itb).first) {
             case UNLIMITED:
-                cout << "constraint Error!" << endl;
+                cout << "constraint Error!";
                 break;
             case LARGE_EQUAL:
-                cout << " >= " << (*itb).second << endl;
+                cout << " >= " << (*itb).second;
                 break;
             case SMALL_EQUAL:
-                cout << " <= " << (*itb).second << endl;
+                cout << " <= " << (*itb).second;
                 break;
             case EQUAL:
-                cout << " = " << (*itb).second << endl;
+                cout << " = " << (*itb).second;
                 break;
             default:
-                cout << "output Error!" << endl;
+                cout << "output Error!";
                 break;
         }
+        if (itb + 1 != B.cend())
+            cout << "," << endl;
     }
-    cout << "共" << B.size() << "个约束条件" << endl;
+    cout << ";" << endl;
 }
 
 Problem* Problem::Dualize() {
@@ -633,7 +639,6 @@ Problem* Problem::Standardlize(WorkMode mode) {
         //             pblm->P.at(i).at(index) = -pblm->P.at(i).at(index);
         //     }
         // }
-
 
         /*  在对偶单纯形法时作特殊变换，通过引入更多约束来增加基变量
         if ((*itb).first == EQUAL) {
@@ -974,7 +979,7 @@ bool Problem::TestConstraint() {
             cout << " >= " << (*itb).second << endl;
         else if ((*itb).first == SMALL_EQUAL)
             cout << " <= " << (*itb).second << endl;
-        
+
         return false;
     }
     return true;
