@@ -346,7 +346,7 @@ Problem* InputPblm() {
                     if ((*itx).name == name)
                         break;
                 if (itx == pblm->X.end())
-                    cout << "var not found,error!" << endl;
+                    cout << "var " << name << " not found,error!" << endl;
                 int index = distance(pblm->X.begin(), itx);
                 // cout << "index is " << index << ", line_num is " << line_num << endl;
                 pblm->P.at(index).at(line_num) += p;

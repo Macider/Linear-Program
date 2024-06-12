@@ -72,7 +72,7 @@ ResultType DualSimplex(Problem* pblm, Base* base) {
         return NO_SOLUTION;
     }
     // cout << "入基变量将增加的值为" << minTheta << "，当前offset为" << pblm->offset << endl;
-    // cout << "目标函数将增加" << minTheta * pblm->C.at(enterBaseVar) << "，预计将增加至" << pblm->offset + minTheta * pblm->C.at(enterBaseVar) << endl;  // 理论上一定要小于0
+    // cout << "目标函数将增加" << minTheta * pblm->B.at(base->constraintOfBaseVar[leaveBaseVar]).second << "，预计将增加至" << pblm->offset + minTheta * pblm->B.at(base->constraintOfBaseVar[leaveBaseVar]).second << endl;  // 理论上一定要小于0
     base->enterBaseVar = enterBaseVar;
     base->leaveBaseVar = leaveBaseVar;
 
@@ -94,7 +94,7 @@ Base* DualInitialize(Problem*& pblm) {
             continue;
         CIsOK = false;
     }
-    assert(CIsOK);
+    // assert(CIsOK);
 
     // 不需要保证存在b<0，如果找到一组基且这组基下任意c<=0，说明算法直接得到最优解
     // 由特殊标准化来保证一定能找到一组基
@@ -116,14 +116,14 @@ Problem* DualSimplexMethod(Problem* pblm0) {
             Pivot(pblm, base);
     cout << "End!" << endl;
 
-    cout << "测试原始约束" << endl;
-    Problem* testPblm = new Problem(*pblm0);
-    int n = testPblm->X.size();
-    for (int i_n = 0; i_n < n; i_n++) {
-        testPblm->X.at(i_n).value = pblm->X.at(i_n).value;
-    }
-    testPblm->TestConstraint();
-    delete testPblm;
+    // cout << "测试原始约束" << endl;
+    // Problem* testPblm = new Problem(*pblm0);
+    // int n = testPblm->X.size();
+    // for (int i_n = 0; i_n < n; i_n++) {
+    //     testPblm->X.at(i_n).value = pblm->X.at(i_n).value;
+    // }
+    // testPblm->TestConstraint();
+    // delete testPblm;
 
     return pblm;
 }

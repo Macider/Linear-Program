@@ -11,6 +11,7 @@ typedef vector<double> vCol;
 typedef vector<vCol> Matrix2d;
 // 目前按列存储，先找列再找行
 // 0 means not checked, -1 means chosen, -2 means not chosen
+// 应该换成#define 来避免magic number！！
 
 // 以下这些可以封装为结构体
 static int matrixSize;
@@ -20,6 +21,8 @@ static vector<int> numOf0InRow;
 static int numOfIndivial0 = 0;
 static vector<bool> colChosen;  // 即所谓打钩
 static vector<bool> rowChosen;
+// 初始时行列均未打√，即行全划线，列无划线
+// 对于行而言，打√意味着不划线；对于列来说，打√意味着划线
 
 // 输出当前效率矩阵
 inline void OutputMatrix2d(Matrix2d m) {
@@ -149,7 +152,7 @@ inline static void DeterminAssign() {
     }
 }
 
-// 步骤二part2，试探性指派
+// 步骤二part2，试探性指派，怎么体现“试探”？这部分似乎有所缺失？
 inline static void ExploreAssign() {
     // 对于有多种选择的情况进行试指派
     // 怎么“不同的方法试探”
@@ -311,6 +314,9 @@ Problem* HungarianMethod(Problem* pblm0) {
     // 步骤一，在每行列中产生0元素
     Generate0Elmnts();
 
+    cout << "产生0元素后矩阵为" << endl;
+    OutputMatrix2d(efficiencyMatrix);
+
     while (1) {
         // 清点0元素
         Count0Elmnts();
@@ -322,6 +328,8 @@ Problem* HungarianMethod(Problem* pblm0) {
             cout << "numOfIndivial0 is " << numOfIndivial0 << endl;
             // 步骤二其二，试探性指派
             ExploreAssign();
+            cout << "试探性指派后矩阵为" << endl;
+            OutputMatrix2d(efficiencyMatrix);
 
             OutputMatrix2d(efficiencyMatrix);
             cout << endl;

@@ -8,7 +8,7 @@
 #define UNCHECK -1
 #define LACKBASE -1
 
-class Base {  // 可以考虑合并到Problem类中，并且增加删除行的操作
+class Base {  // 可以考虑合并到Problem类中，并且增加删除行的操作，化简、寻找出入基可以被还原为三部分，从而可以舍弃enterVar和leaveVar
    public:
     vector<int> baseVarOfConstraint;  // m member in [0,n)
     vector<int> constraintOfBaseVar;  // n member in [0,m) //互为逆运算
@@ -143,9 +143,6 @@ Base* GetBase(Problem* pblm, WorkMode mode) {
         return base;
     cout << "baseLack is " << baseLack << endl;
     // 考虑到对偶单纯形法经过了特殊初始化，理论上在上面就能找到足够的基变量
-
-    if (mode == DUAL_SIMPLEX)
-        cout << "!!!!!!!!!!!!!!!!!" << endl;
 
     // 第三步，产生0元素以新增任意a!=0的非基变量作为基变量
     cout << "寻找基变量Step3" << endl;
@@ -403,11 +400,11 @@ Base* GetBase(Problem* pblm, WorkMode mode) {
         // pblm->OutputConstraint();
         // 若此时的X不符合方程约束，则说明该问题无解
         // auxiliaryPblm->OutputResult();
-        // if (!pblm->TestConstraint()) {
-        //     cout << "No solution" << endl;
-        //     pblm->result = NO_SOLUTION;
-        //     return base;
-        // }
+        if (!pblm->TestConstraint()) {
+            cout << "No solution" << endl;
+            pblm->result = NO_SOLUTION;
+            return base;
+        }
         base = GetBase(pblm);
         delete auxiliaryPblm;
         pblm->result = UNKNOWN;

@@ -3,6 +3,7 @@
  */
 #pragma once
 
+#include <time.h>
 #include "./base.h"
 #include "./problem.h"
 using namespace std;
@@ -129,8 +130,9 @@ Problem* SimplexMethod(Problem* pblm0) {
     Base* base = SimplexInitialize(pblm);
 
     if (pblm->result == UNKNOWN)
-        while (Simplex(pblm, base) == UNKNOWN) 
+        while (Simplex(pblm, base) == UNKNOWN)
             Pivot(pblm, base);
+        
     cout << "End!" << endl;
     pblm->SimplifyDouble();
     // pblm->OutputTarget();

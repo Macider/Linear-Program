@@ -44,8 +44,10 @@ Problem* ImplicitEnumerationMethod(Problem* pblm0) {
     int solutionX = 0;
     int Xsize = pblm->X.size();
     int Bsize = pblm->B.size();
+    // arrayX 最多31位，这是问题，需要修改
     for (int arrayX = 0; arrayX < pow(2, Xsize); arrayX++) {  // arrayX的第0位对应x0
         // cout << "arrayX is " << arrayX << endl;
+        // 计算当前X的目标函数值
         double nowValue = pblm->offset;
         for (int xNo = 0; xNo < Xsize; xNo++) {
             int xValue = (arrayX >> xNo & 1);
@@ -56,6 +58,7 @@ Problem* ImplicitEnumerationMethod(Problem* pblm0) {
             continue;
         }
         bool isOK = true;
+        // 遍历各个约束条件，检查当前X是否符合要求
         for (int bNo = 0; bNo < Bsize; bNo++) {
             double lhs = 0;  // 左边项
             for (int xNo = 0; xNo < Xsize; xNo++) {

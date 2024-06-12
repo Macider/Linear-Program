@@ -25,11 +25,12 @@ Problem* CutPlaneMethod(Problem* pblm0) {
         // 确保PBX都被整数化
     }
     pblm = SimplexMethod(pblm);
+    // 求解直接得到整数解需要直接退出，待修改
 
     while (true) {
-        pblm->OutputResult();
+        // pblm->OutputResult();
         tResult* rst = pblm->GetResult();
-        pblm->OutputConstraint();
+        // pblm->OutputConstraint();
         if (IsIntResult(rst)){
             cout << "已得到整数最优解" << endl;
             return pblm;
@@ -97,6 +98,7 @@ Problem* CutPlaneMethod(Problem* pblm0) {
                 cout << "+" << pblm->P.at(i_n).back() << "*" << pblm->X.at(i_n).name;
             }
             cout << " = " << pblm->B.back().second << endl;
+            break;      // 每次只生成一条约束
         }
         if (!goOnLoop)
             break;
